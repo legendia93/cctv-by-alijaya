@@ -38,6 +38,18 @@ ungu/amber → netral ink. Gradient & glow & blur → dimatikan.
 > manajemen, tapi **secara visual sudah netral**. Pembersihan string per-halaman =
 > sisa pekerjaan opsional (bukan blocker). Lihat §5.
 
+> ⚠️ **KOREKSI (sesi 2026-07-21).** Klaim "halaman belum dimigrasi pun langsung tampil
+> dalam palet Nothing" ternyata **tidak sepenuhnya benar**. Compat layer = daftar
+> override **manual** → yang tak terdaftar lolos memakai warna Tailwind asli (dirancang
+> untuk latar navy) → **tak terlihat di light**. Yang bocor: `text-gray-50/100`, shade
+> `-200/-300`, kuning/lime (1.26:1!), `hover:*`, chip bertint `bg-*-600/20`,
+> `bg-blue-600`, indigo/teal/sky/violet/pink. Sudah ditambal — detail & daftar lengkap:
+> [13-fix-kontras-light.md](13-fix-kontras-light.md).
+>
+> **Aturan baru:** menambah kelas Tailwind warna di markup? Pastikan compat
+> menanganinya, atau langsung pakai utility `.n-*`. Compat **bukan** jaring pengaman
+> otomatis.
+
 ---
 
 ## 2. Shell admin (semua halaman admin ikut)
@@ -87,7 +99,10 @@ di-restyle. Stray `</html>` ganda di file lama dibuang.
   glass + navy). View lama yang masih me-link file ini tak lagi mengembalikan emerald.
 - **`public/manifest.json`** + semua `<meta name="theme-color">` → `#F4F4F4` (dulu `#0f172a`).
 - **Sisa string emerald** di markup halaman manajemen (`admin_customers/alerts/streaming/
-  finance/…`) — **belum** dibersihkan per-string, tapi **dinetralkan compat**. Aman.
+  finance/…`) — **belum** dibersihkan per-string, tapi **dinetralkan compat**.
+  ~~Aman.~~ ⚠️ **Terbukti tidak selalu aman** — lihat koreksi di §1. Compat sempat bocor
+  dan bikin konten tak terlihat di light; sudah ditambal
+  ([13-fix-kontras-light.md](13-fix-kontras-light.md)).
 - Spot-fix literal keras: `admin_dvr_apk.ejs` (kartu brand/step-indicator emerald→ink,
   gradient icon→`.n-brandbox`), `admin_settings.ejs` (pin peta `#10b981`→`#D71921`).
 
@@ -100,6 +115,10 @@ di-restyle. Stray `</html>` ganda di file lama dibuang.
   `toggleTheme`/`data-theme` init ada).
 - Screenshot headless (Chrome) mengkonfirmasi: font dot-matrix tampil, aksen-merah-hemat,
   kartu bento, inversi `n-card-black` benar di **light & dark**.
+  > ⚠️ Verifikasi ini **melewatkan cacat kontras** — screenshot per halaman utama +
+  > grep tak menangkap teks terang-di-atas-terang pada tabel/badge/hover. Metode yang
+  > benar: **auditor kontras WCAG** (hitung background efektif menembus ancestor), lihat
+  > [13-fix-kontras-light.md](13-fix-kontras-light.md) §5.
 - **Tanpa restart**: semua perubahan view/CSS/asset → **cukup refresh browser** (view
   cache off saat dev; lihat [02-dev-workflow.md](02-dev-workflow.md)). Tidak menambah
   dependency build (Tailwind tetap CDN, font self-host statis).
@@ -113,6 +132,12 @@ di-restyle. Stray `</html>` ganda di file lama dibuang.
 - Kalau bikin halaman/komponen baru: pakai `.n-card`, `.n-btn`, `.n-label`, `.n-num`, dsb.
   Angka besar/jam/badge teknis → `.n-num` (dot-matrix). Metadata → `.n-label` (mono uppercase).
 - Kalau menata ulang halaman manajemen yang masih `bg-emerald-*`: ganti string ke `.n-*`
-  saat gilirannya — **compat menutupi sementara**, jadi bukan darurat.
+  saat gilirannya — compat menutupi sementara, tapi **hanya untuk kelas yang terdaftar**.
+  Shade di luar daftar (mis. `-50/-100`, `-200/-300`, kuning) **lolos dan jadi tak
+  terlihat di light**. Jangan anggap compat sebagai jaring pengaman otomatis.
+- **Ubah token `--n-*`? Cek kontras dulu** — beberapa token sempat di bawah WCAG AA di
+  *kedua* tema (`--n-ink-faint` 2.56:1 light / 3.4:1 dark). Nilai aman sekarang tercatat
+  di [13-fix-kontras-light.md](13-fix-kontras-light.md) §3. Ingat `surface-2` (`#ECECEC`)
+  lebih gelap dari `bg` — teks yang lolos di `bg` bisa gagal di chip.
 - Semua patch tetap di `app/` (repo clone) → risiko konflik `git pull` upstream. Lihat
   [03-patch-app-clone.md](03-patch-app-clone.md).

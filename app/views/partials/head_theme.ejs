@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <!-- Nothing design tokens -->
-<link rel="stylesheet" href="<%= base_path %>/css/nothing.css" />
+<link rel="stylesheet" href="<%= base_path %>/css/nothing.css?v=<%= typeof asset_v !== 'undefined' ? asset_v : '1' %>" />
 
 <!-- Tailwind (CDN) + config bersama: utility ikut token, auto light/dark -->
 <script src="https://cdn.tailwindcss.com"></script>
@@ -64,6 +64,12 @@
   .text-slate-200,.text-slate-300{ color:var(--n-ink)!important; }
   .text-slate-400,.text-slate-500{ color:var(--n-ink-soft)!important; }
   .text-slate-600,.text-slate-700{ color:var(--n-ink-faint)!important; }
+  /* Shade tua: hitam-di-atas-hitam saat dark. Tanpa ini gagal di KEDUA tema.
+     Popup Leaflet dikecualikan — kontainernya putih permanen, bukan surface token. */
+  :not(.leaflet-popup-content):not(.leaflet-popup-content *) > .text-slate-800,
+  .text-slate-900:not(.leaflet-popup-content *),.text-gray-800:not(.leaflet-popup-content *),
+  .text-gray-900:not(.leaflet-popup-content *),.text-zinc-800,.text-zinc-900,
+  .text-neutral-800,.text-neutral-900,.text-black:not(.leaflet-popup-content *){ color:var(--n-ink)!important; }
   .border-slate-700,.border-slate-800{ border-color:var(--n-line)!important; }
 
   /* Border navy -> garis 1px */
@@ -71,17 +77,68 @@
 
   /* Teks */
   .text-white{ color:var(--n-ink)!important; }
+  .text-gray-50,.text-gray-100,.text-slate-50,.text-slate-100,.text-zinc-50,.text-zinc-100,.text-neutral-50,.text-neutral-100{ color:var(--n-ink)!important; }
   .text-gray-200,.text-gray-300,.text-gray-400{ color:var(--n-ink-soft)!important; }
   .text-gray-500,.text-gray-600{ color:var(--n-ink-faint)!important; }
+  /* Hover state warisan tema dark: putih di atas surface terang = hilang */
+  .hover\:text-white:hover,.hover\:text-gray-100:hover,.hover\:text-gray-200:hover{ color:var(--n-ink)!important; }
 
   /* Emerald (aksen lama) -> netral ink; JANGAN merah (merah = hemat) */
-  .text-emerald-400,.text-emerald-500,.text-emerald-600,.text-green-400,.text-green-500,.text-cyan-400,.text-cyan-500,.text-blue-400,.text-blue-500,.text-purple-400,.text-purple-500,.text-amber-400,.text-amber-500,.text-orange-400,.text-orange-500{ color:var(--n-ink)!important; }
-  .bg-emerald-500,.bg-emerald-600,.bg-green-500,.bg-green-600{ background-color:var(--n-ink)!important; color:var(--n-bg)!important; }
-  .hover\:bg-emerald-500:hover,.hover\:bg-emerald-600:hover,.hover\:bg-green-600:hover{ background-color:var(--n-ink)!important; opacity:.85; }
+  .text-emerald-400,.text-emerald-500,.text-emerald-600,.text-green-400,.text-green-500,.text-cyan-400,.text-cyan-500,.text-blue-400,.text-blue-500,.text-purple-400,.text-purple-500,.text-amber-400,.text-amber-500,.text-orange-400,.text-orange-500,.text-indigo-400,.text-indigo-500,.text-teal-400,.text-teal-500,.text-sky-400,.text-sky-500,.text-violet-400,.text-violet-500,.text-pink-400,.text-pink-500{ color:var(--n-ink)!important; }
+  /* Shade pucat -200/-300 dirancang utk latar gelap -> tak terbaca di light */
+  .text-emerald-200,.text-emerald-300,.text-green-200,.text-green-300,.text-cyan-200,.text-cyan-300,.text-blue-200,.text-blue-300,.text-purple-200,.text-purple-300,.text-amber-200,.text-amber-300,.text-orange-200,.text-orange-300,.text-teal-200,.text-teal-300,.text-indigo-200,.text-indigo-300,.text-sky-200,.text-sky-300{ color:var(--n-ink)!important; }
+  .text-rose-200,.text-rose-300,.text-red-200,.text-red-300{ color:var(--n-accent)!important; }
+  .bg-emerald-500,.bg-emerald-600,.bg-emerald-700,.bg-emerald-800,.bg-green-500,.bg-green-600,.bg-green-700{ background-color:var(--n-ink)!important; color:var(--n-bg)!important; }
+  .bg-emerald-700 *,.bg-emerald-800 *,.bg-green-700 *{ color:var(--n-bg)!important; }
+  /* Shade tua -700/-800 utk teks: gelap di light OK, tapi hilang di dark -> pakai token */
+  .text-rose-700,.text-rose-800,.text-red-700,.text-red-800{ color:var(--n-accent)!important; }
+  .text-emerald-700,.text-emerald-800,.text-green-700,.text-green-800,.text-blue-700,.text-blue-800{ color:var(--n-ink-soft)!important; }
+  /* Semua hover-bg warna warisan -> ink (kecuali rose/red = danger, di bawah).
+     Pakai attribute selector supaya seluruh shade tercakup, tak perlu enumerasi. */
+  [class*="hover:bg-emerald-"]:hover,[class*="hover:bg-green-"]:hover,[class*="hover:bg-cyan-"]:hover,[class*="hover:bg-blue-"]:hover,[class*="hover:bg-purple-"]:hover,[class*="hover:bg-amber-"]:hover,[class*="hover:bg-orange-"]:hover,[class*="hover:bg-teal-"]:hover,[class*="hover:bg-indigo-"]:hover,[class*="hover:bg-sky-"]:hover,[class*="hover:bg-violet-"]:hover,[class*="hover:bg-lime-"]:hover,[class*="hover:bg-yellow-"]:hover,[class*="hover:bg-pink-"]:hover{ background-color:var(--n-ink)!important; color:var(--n-bg)!important; }
+  [class*="hover:bg-rose-"]:hover,[class*="hover:bg-red-"]:hover{ background-color:var(--n-accent)!important; color:var(--n-accent-ink)!important; }
   .bg-emerald-500\/10,.bg-emerald-500\/20,.bg-green-500\/10,.bg-blue-500\/10,.bg-cyan-500\/10,.bg-purple-500\/10,.bg-amber-500\/10,.bg-orange-500\/10{ background-color:var(--n-surface-2)!important; }
+
+  /* Kuning/lime tak punya aturan sama sekali -> paling parah di light (1.26:1) */
+  .text-yellow-300,.text-yellow-400,.text-yellow-500,.text-lime-300,.text-lime-400,.text-lime-500{ color:var(--n-ink)!important; }
+
+  /* Badge bertint: bg-<warna>-600/20 + teks pucat = pucat di atas pucat.
+     Jadikan chip surface-2 + ink; varian danger tetap merah. */
+  [class*="bg-yellow-"][class*="/1"],[class*="bg-yellow-"][class*="/2"],[class*="bg-yellow-"][class*="/3"],[class*="bg-yellow-"][class*="/4"],
+  [class*="bg-amber-"][class*="/1"],[class*="bg-amber-"][class*="/2"],[class*="bg-amber-"][class*="/3"],[class*="bg-amber-"][class*="/4"],
+  [class*="bg-emerald-"][class*="/1"],[class*="bg-emerald-"][class*="/2"],[class*="bg-emerald-"][class*="/3"],[class*="bg-emerald-"][class*="/4"],
+  [class*="bg-green-"][class*="/1"],[class*="bg-green-"][class*="/2"],[class*="bg-green-"][class*="/3"],[class*="bg-green-"][class*="/4"],
+  [class*="bg-blue-"][class*="/1"],[class*="bg-blue-"][class*="/2"],[class*="bg-blue-"][class*="/3"],[class*="bg-blue-"][class*="/4"],
+  [class*="bg-cyan-"][class*="/1"],[class*="bg-cyan-"][class*="/2"],[class*="bg-cyan-"][class*="/3"],[class*="bg-cyan-"][class*="/4"],
+  [class*="bg-purple-"][class*="/1"],[class*="bg-purple-"][class*="/2"],[class*="bg-purple-"][class*="/3"],[class*="bg-purple-"][class*="/4"],
+  [class*="bg-orange-"][class*="/1"],[class*="bg-orange-"][class*="/2"],[class*="bg-orange-"][class*="/3"],[class*="bg-orange-"][class*="/4"],
+  [class*="bg-teal-"][class*="/1"],[class*="bg-teal-"][class*="/2"],[class*="bg-teal-"][class*="/3"],[class*="bg-teal-"][class*="/4"],
+  [class*="bg-indigo-"][class*="/1"],[class*="bg-indigo-"][class*="/2"],[class*="bg-indigo-"][class*="/3"],[class*="bg-indigo-"][class*="/4"]{
+    background-color:var(--n-surface-2)!important; color:var(--n-ink)!important;
+  }
+  /* Teks anak di dalam chip bertint ikut ink (mis. text-emerald-300 pada tombol ON) */
+  [class*="bg-emerald-"][class*="/3"] *,[class*="bg-emerald-"][class*="/4"] *,
+  [class*="bg-green-"][class*="/3"] *,[class*="bg-green-"][class*="/4"] *{ color:var(--n-ink)!important; }
+  /* Chip danger: aksen #D71921 hanya 4.39:1 di atas surface-2 -> pakai varian gelap. */
+  [class*="bg-rose-"][class*="/1"],[class*="bg-rose-"][class*="/2"],[class*="bg-rose-"][class*="/3"],[class*="bg-rose-"][class*="/4"],
+  [class*="bg-red-"][class*="/1"],[class*="bg-red-"][class*="/2"],[class*="bg-red-"][class*="/3"],[class*="bg-red-"][class*="/4"]{
+    background-color:var(--n-surface-2)!important;
+  }
+  [class*="bg-rose-"][class*="/1"] *,[class*="bg-rose-"][class*="/2"] *,[class*="bg-rose-"][class*="/3"] *,[class*="bg-rose-"][class*="/4"] *,
+  [class*="bg-red-"][class*="/1"] *,[class*="bg-red-"][class*="/2"] *,[class*="bg-red-"][class*="/3"] *,[class*="bg-red-"][class*="/4"] *,
+  [class*="bg-rose-"][class*="/1"],[class*="bg-rose-"][class*="/2"],[class*="bg-rose-"][class*="/3"],[class*="bg-rose-"][class*="/4"],
+  [class*="bg-red-"][class*="/1"],[class*="bg-red-"][class*="/2"],[class*="bg-red-"][class*="/3"],[class*="bg-red-"][class*="/4"]{
+    color:var(--n-accent-deep)!important;
+  }
+  /* Teks aksen di atas surface-2 (chip/baris hover) butuh varian gelap */
+  .bg-gray-800 .text-rose-500,.bg-gray-800 .text-rose-400,.bg-gray-700 .text-rose-500,
+  .n-card-2 .text-rose-500,.n-card-2 .text-rose-400{ color:var(--n-accent-deep)!important; }
 
   /* Merah/rose = danger, dipertahankan sebagai aksen Nothing */
   .text-rose-400,.text-rose-500,.text-red-400,.text-red-500{ color:var(--n-accent)!important; }
+  /* Tombol rose/red solid: teks harus kontras di atas merah, bukan ink gelap */
+  .bg-rose-700,.bg-rose-800,.bg-rose-900,.bg-red-700,.bg-red-800,.bg-red-900{ background-color:var(--n-accent)!important; color:var(--n-accent-ink)!important; }
+  .bg-rose-700 *,.bg-rose-800 *,.bg-red-700 *,.bg-red-800 *{ color:var(--n-accent-ink)!important; }
   .bg-rose-500,.bg-rose-600,.bg-red-500,.bg-red-600{ background-color:var(--n-accent)!important; color:var(--n-accent-ink)!important; }
   .bg-rose-500\/10,.bg-rose-500\/20,.bg-red-500\/10,.bg-red-900\/20{ background-color:var(--n-surface-2)!important; }
 
@@ -95,6 +152,28 @@
   .focus\:border-emerald-500:focus,.focus\:border-emerald-400:focus,.focus\:border-blue-500:focus,.focus\:border-cyan-500:focus,.focus\:ring-emerald-500:focus{ border-color:var(--n-ink)!important; --tw-ring-color:var(--n-ink)!important; }
   .accent-emerald-500,.accent-emerald-600,.accent-green-500{ accent-color:var(--n-accent)!important; }
   .placeholder-gray-600::placeholder,.placeholder-gray-500::placeholder{ color:var(--n-ink-faint)!important; }
+
+  /* "Chip gelap" warisan: bg-gray-900 + teks redup. Setelah bg jadi terang,
+     pasangan itu jadi abu-abu-di-atas-abu-abu. Paksa jadi chip surface-2 + ink. */
+  .bg-gray-900.text-gray-400,.bg-gray-900.text-gray-500,.bg-gray-900.text-gray-600,
+  .bg-gray-800.text-gray-400,.bg-gray-800.text-gray-500,.bg-gray-800.text-gray-600,
+  .bg-slate-900.text-slate-400,.bg-slate-900.text-slate-500,.bg-slate-900.text-slate-600{
+    background-color:var(--n-surface-2)!important; color:var(--n-ink)!important; border:1px solid var(--n-line);
+  }
+
+  /* Tombol warna solid tanpa aturan compat (biru/indigo/ungu dll) -> tombol ink */
+  .bg-blue-500,.bg-blue-600,.bg-blue-700,.bg-indigo-500,.bg-indigo-600,.bg-cyan-600,
+  .bg-purple-500,.bg-purple-600,.bg-teal-500,.bg-teal-600,.bg-sky-500,.bg-sky-600{
+    background-color:var(--n-ink)!important; color:var(--n-bg)!important;
+  }
+  .bg-blue-500 *,.bg-blue-600 *,.bg-blue-700 *,.bg-indigo-500 *,.bg-indigo-600 *,
+  .bg-purple-500 *,.bg-purple-600 *,.bg-teal-500 *,.bg-teal-600 *,.bg-sky-500 *,.bg-sky-600 *{ color:var(--n-bg)!important; }
+
+  /* Popup Leaflet: kontainer selalu putih (di-render library, bukan token kita).
+     Kunci teksnya ke gelap di kedua tema supaya tak jadi putih-di-atas-putih. */
+  .leaflet-popup-content .text-slate-900,.leaflet-popup-content b{ color:#0F172A!important; }
+  .leaflet-popup-content .text-slate-700{ color:#334155!important; }
+  .leaflet-popup-content .text-slate-500,.leaflet-popup-content .text-slate-400{ color:#64748B!important; }
 
   /* Selection & scrollbar global konsisten */
   .custom-scrollbar::-webkit-scrollbar{ width:4px; height:4px; }

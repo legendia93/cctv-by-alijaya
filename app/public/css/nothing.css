@@ -21,12 +21,13 @@
   --n-surface-2: #ECECEC;     /* kartu sekunder / hover */
   --n-ink:       #0A0A0A;     /* teks utama, kartu hitam */
   --n-ink-soft:  #6B6B6B;     /* teks sekunder */
-  --n-ink-faint: #9A9A9A;     /* metadata paling redup */
+  --n-ink-faint: #696969;     /* metadata paling redup — AA juga di atas surface-2 (#ECECEC) */
   --n-line:      #E2E2E2;     /* garis 1px */
   --n-line-strong:#0A0A0A;    /* garis penegas (kotak hitam) */
   --n-accent:    #D71921;     /* MERAH — hemat! */
+  --n-accent-deep:#B01019;    /* aksen utk teks di atas chip/tint (AA) */
   --n-accent-ink:#FFFFFF;     /* teks di atas merah */
-  --n-live:      #0FA3A3;     /* turquois — status LIVE (permintaan user) */
+  --n-live:      #0B7C7C;     /* turquois — status LIVE (permintaan user); digelapkan utk kontras AA di light */
   --n-on-black:  #F4F4F4;     /* teks di atas kartu hitam */
   --n-radius:    22px;        /* squircle default */
   --n-radius-sm: 14px;
@@ -43,11 +44,12 @@
   --n-surface:   #161616;
   --n-surface-2: #1E1E1E;
   --n-ink:       #F4F4F4;
-  --n-ink-soft:  #9A9A9A;
-  --n-ink-faint: #6B6B6B;
+  --n-ink-soft:  #A8A8A8;
+  --n-ink-faint: #8A8A8A;     /* dinaikkan: #6B6B6B hanya 3.4:1 di #0A0A0A (di bawah AA) */
   --n-line:      #2A2A2A;
   --n-line-strong:#F4F4F4;
   --n-accent:    #FF2A34;
+  --n-accent-deep:#FF6068;    /* di dark, "deep" = lebih TERANG agar kontras di chip gelap */
   --n-accent-ink:#0A0A0A;
   --n-live:      #2DD4D4;     /* turquois lebih terang utk dark */
   --n-on-black:  #F4F4F4;

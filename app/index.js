@@ -191,6 +191,7 @@ app.locals.telegram = config.telegram;
 app.locals.mediamtx = config.mediamtx;
 app.locals.hls_port = config.mediamtx?.hls_port || 8856;
 app.locals.base_path = config.server.base_path || '';
+app.locals.asset_v = APP_VERSION;   // cache-buster aset statis (CSS/tema)
 app.locals.generateEmbedHtml = generateEmbedHtml;
 
 let cameraStatus = {};

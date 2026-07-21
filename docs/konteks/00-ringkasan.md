@@ -23,6 +23,7 @@ per topik di folder ini:
 | [10-ui-tabel-permission-preview.md](10-ui-tabel-permission-preview.md) | Tabel admin, Permission Manager jadi tabel, preview live, matriks baca DB |
 | [09-style-table.md](09-style-table.md) | **Referensi styling tabel admin** — tabel transparan + garis tipis, toggle ON/OFF berwarna, section collapse |
 | [11-deploy-produksi.md](11-deploy-produksi.md) | **Cara deploy ke prod** — topologi TrueNAS/VM, storage NFS ber-quota, bootstrap + deploy.sh |
+| [13-fix-kontras-light.md](13-fix-kontras-light.md) | **Fix konten tak terlihat di tema light** — compat layer bocor, token kontras, cache-buster CSS |
 
 Dokumentasi utama (bukan konteks sesi) ada di `docs/01..08-*.md`.
 
@@ -100,6 +101,15 @@ e:\Project\cctv\
   `scripts/bootstrap-prod.sh` (sekali), `scripts/deploy.sh` (rutin), dan `app/version.js`
   (versi tampil di sidebar admin + halaman live). ⚠️ Script **belum dijalankan
   end-to-end**. Detail: [11-deploy-produksi.md](11-deploy-produksi.md).
+- ✅ **Fix konten tak terlihat di tema light** (sesi 2026-07-21): akar masalah = **legacy
+  compat layer bocor** — kelas Tailwind warisan yang tak terdaftar (`text-gray-50/100`,
+  shade `-200/-300`, kuning, `hover:*`, chip bertint) lolos memakai warna aslinya →
+  terang di atas terang. Ditambal **di compat layer** (1 file, semua halaman ikut) +
+  perbaikan **token** (`--n-ink-faint` light & dark, `--n-live`, token baru
+  `--n-accent-deep`). Ikut memperbaiki **cacat lama di dark** (`ink-faint` cuma 3.4:1).
+  Ditambah **cache-buster CSS** (`?v=APP_VERSION`). Diverifikasi dengan auditor kontras
+  WCAG nyata via Chrome DevTools Protocol: **16 halaman × 2 tema = 0 masalah**.
+  Detail: [13-fix-kontras-light.md](13-fix-kontras-light.md).
 - 🟢 Stack DEV sedang **berjalan** saat sesi ditutup: `cctv-allinone` (healthy) di
   http://localhost:3003, 5 kamera terdaftar (semua `enable_recording=0` / live-only).
 
