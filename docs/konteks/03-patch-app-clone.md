@@ -343,6 +343,57 @@ Konsekuensi desain (penting kalau nanti menyentuh fitur ini):
   + jalur override manual (`-1`) yang permanen.
 - Status lapangan: **semua 5 kamera terdaftar (37–41) tidak ada yang punya PTZ.**
 
+---
+
+## 2026-07-21 — Hapus fitur mati + UI mobile (Plan #10, live di prod)
+
+Plan: [../plan/done/10-hapus-fitur-mati.md](../plan/done/10-hapus-fitur-mati.md).
+Commit `4363385` (hapus) & `022a2e5` (mobile). **-1.785 baris.**
+
+**Dihapus** — AI Engine, APK CCTV, P2P Stream. Ketiganya tidak dipakai dan menyisakan
+indikator yang selalu mati. Ikut terbuang: `database_ai.js` (yatim, tak pernah
+di-`require`), view `admin_apk_cctv.ejs` + `admin_p2p_stream.ejs`, route terkait, dan
+key permission `admin_ai`/`admin_ai_report`.
+**DVR/NVR (`admin/dvr-apk`) tidak disentuh** — nama mirip, fitur berbeda, masih aktif.
+
+**UI mobile** (`app/views/index.ejs`) — tombol audio & multi-view 2×2 di HP.
+
+### Fakta kode yang ditemukan sepanjang sesi ini
+
+- **Overlay kontrol live view dulu pakai `opacity-0 group-hover:opacity-100`.** Di HP
+  tidak ada hover → **seluruh overlay** (screenshot, fullscreen, audio) tak terjangkau
+  sentuh, bukan cuma audio. Sekarang `opacity-100 lg:opacity-0 lg:group-hover:opacity-100`.
+  Kalau menambah tombol baru di overlay, ikuti pola ini.
+- **`toggleCameraSelection()` dulu mengunci HP ke 1 kamera** (`selectedCameraIds = [id]`,
+  selalu ganti). Ini penghalang sebenarnya multi-view di HP — memunculkan tombol preset
+  saja tidak cukup. Sekarang: tap = ganti saat 1 view, tap = tambah saat grid >1 tile,
+  **dibatasi `MOBILE_MAX_TILES = 4`** dengan perilaku geser (`shift()` yang terlama).
+- **Batas 4 tile di HP wajib ditegakkan di EMPAT tempat**, bukan satu. Versi pertama
+  cuma menyentuh `toggleCameraSelection` dan langsung bocor di prod:
+  `toggleCameraSelection()` (tap), `setGridPreset()` (tombol preset),
+  `selectDefaultCameras()` (dulu `slice(0,16)` — login pertama dari HP = 16 tile), dan
+  `loadState()` (state dari sesi desktop bisa berisi 9–16 id). Kalau menambah jalur baru
+  yang mengisi `selectedCameraIds`, batasi juga di sana.
+- **Ukuran tombol overlay: `p-1.5` + ikon `w-3` (~24px), seragam di semua grid.** Sempat
+  dinaikkan ke 32px demi target sentuh, tapi di tile 2×2 (~187px) jadi dominan dan user
+  menolaknya. Target sentuh mengalah pada proporsi tile.
+- **`setGridPreset()` tidak memanggil `renderMobileList()` maupun `saveState()`.** Di
+  desktop tak terasa; di HP bikin highlight daftar basi & pilihan tak tersimpan. Sudah
+  ditambah, plus `scrollTo` ke atas (tombol preset ada **di dalam** daftar kamera).
+- **CSS grid tidak pernah dikunci per perangkat** — `.grid-4`/`.grid-9`/`.grid-16`
+  berlaku di semua lebar layar. Satu-satunya media query cuma `aspect-ratio` `.grid-1`
+  di ≥1024px. Pembatasan multi-view murni ada di JS, bukan CSS.
+- Preset HP sengaja **hanya 1×1 & 2×2**. 3×3/4×4 desktop-only: di 390px tile jadi
+  ~123px/~91px, dan tiap tile = satu HLS decode — HP kelas menengah kehabisan decoder
+  hardware (sejalan dengan alasan transcode H.265→H.264, lihat
+  [06-temuan-lapangan.md](06-temuan-lapangan.md)).
+- **Permission tidak dirender dari DB.** `getLevelPermissions()` memakai
+  `{...defaults, ...stored}` (`services/levelPermissions.js:257`) sehingga key yang
+  dihapus dari default **tetap tertinggal** di kolom JSON DB. Tapi tak berdampak: UI
+  merender dari `menuGroups` yang **hardcode** di `views/admin_permissions.ejs:77`.
+  Konsekuensi: menghapus permission cukup di kode, **tidak perlu migrasi DB** — tapi
+  menambah permission baru **wajib** menyentuh `menuGroups`, kalau tidak takkan muncul.
+
 ## Fakta penting kode (temuan audit)
 
 - Recording MediaMTX = global on/off (`config.recording.enabled` + jendela waktu) **DAN**

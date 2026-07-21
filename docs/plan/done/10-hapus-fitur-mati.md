@@ -1,6 +1,23 @@
 # Plan — Bersih-bersih Fitur Mati + Tombol Audio Mobile
 
-**Status: semua bagian (1–5) ✅ dikoding 2026-07-21. Verifikasi di HP belum dilakukan.**
+**Status: ✅ SELESAI — semua bagian (1–5) dikoding, diverifikasi di HP, dan dideploy
+ke prod 2026-07-21.**
+
+> **Perbaikan susulan setelah tes user di prod (2026-07-21).** Deploy pertama
+> memunculkan dua bug, keduanya akibat perubahan Bagian 5:
+>
+> 1. **Tap kamera ke-5 saat 2×2 → jadi 5 tile.** Longgarnya
+>    `selectedCameraIds.length <= 1` membuat tap = tambah **tanpa batas atas**;
+>    kamera ke-5 masuk `grid-6` dan layout berantakan.
+> 2. **Tombol action terlalu besar di tile 2×2.** Ukuran 32px yang pas di 1 view
+>    jadi dominan di tile ~187px.
+>
+> Perbaikan: batas **`MOBILE_MAX_TILES = 4`** dengan perilaku **geser** (kamera
+> terlama keluar, bukan tap ditolak), dan tombol dikembalikan ke `p-1.5`+`w-3`
+> seragam di semua grid. Telusur mengungkap **dua jalur bocor lain** yang tidak
+> ketahuan dari tes UI: `selectDefaultCameras()` memuat `slice(0,16)` — login
+> pertama dari HP langsung 16 tile — dan `loadState()` tidak memotong state yang
+> datang dari sesi desktop. Keduanya ikut dibatasi.
 
 Hasil eksekusi bagian 1–3: **1.780 baris terhapus**, 3 file dibuang
 (`database_ai.js`, `admin_apk_cctv.ejs`, `admin_p2p_stream.ejs`). DVR/NVR tidak
@@ -13,19 +30,32 @@ Dua temuan di luar plan awal:
   `index.js` — jadi selama ini 404 tiap muat halaman. Ikut dibuang.
 
 Permission `admin_ai` & `admin_ai_report` sudah hilang dari `services/levelPermissions.js`
-(12 baris default + 2 entri katalog). **Belum ada migrasi DB** — lihat catatan di bawah.
+(12 baris default + 2 entri katalog).
 
 Hasil bagian 4–5 (mobile), semua di `app/views/index.ejs`:
 - Overlay kontrol: `opacity-0` diganti `opacity-100 lg:opacity-0 lg:group-hover:opacity-100`
   — di HP selalu tampil, di desktop perilaku hover **tidak berubah**. Ketiga tombol
-  dinaikkan dari `p-1.5`+`w-3` (≈24px) ke `p-2`+`w-4` (≈32px) memenuhi target sentuh.
+  sempat dinaikkan ke `p-2`+`w-4` (≈32px) demi target sentuh, tapi **dikembalikan ke
+  `p-1.5`+`w-3` (≈24px)** setelah tes user — di tile 2×2 tombol 32px jadi dominan.
 - `toggleAudio()` + `setAudioIcon()` baru: ikon speaker on/off, set `volume = 1` saat
   unmute, dan **mute semua tile lain** supaya hanya satu kamera bersuara.
 - Penguncian `toggleCameraSelection` dilonggarkan jadi
   `isMobile && selectedCameraIds.length <= 1` — tap = ganti saat 1 view, tap = tambah
   saat grid >1 tile.
-- Preset **1×1 & 2×2** untuk HP ditaruh di atas kotak cari `#mobile-list-container`
-  (wadah terpisah — header desktop baris 340 tidak disentuh).
+- Preset **1×1 & 2×2** untuk HP, **sebaris dengan kotak cari** di
+  `#mobile-list-container` (wadah terpisah — header desktop baris 340 tidak disentuh).
+  Atas permintaan user tombol dijadikan **ikon** (satu kotak / empat kotak), bukan teks,
+  supaya kotak cari tetap lega di layar 390px; input dibungkus `flex-1 min-w-0` —
+  tanpa `min-w-0` input flex bisa memaksa baris melebar dan memunculkan scroll
+  horizontal. Ukuran tombol `w-9 h-9` (36px), di atas target sentuh.
+
+**Migrasi DB: tidak diperlukan.** Sempat dicurigai perlu, tapi setelah ditelusuri:
+`getLevelPermissions()` memakai `{...defaults, ...stored}`
+([levelPermissions.js:257](../../../app/services/levelPermissions.js#L257)) sehingga key
+`admin_ai` yang tersimpan di DB memang **tidak hilang sendiri** — namun tidak berdampak,
+karena Permission Manager merender dari `menuGroups` yang hardcode di
+[admin_permissions.ejs:77](../../../app/views/admin_permissions.ejs#L77) dan daftar itu
+tidak memuat `admin_ai`. Key sisa jadi data mati yang tak terbaca siapa pun.
 
 Satu temuan di luar plan: `setGridPreset()` **tidak memanggil `renderMobileList()`
 maupun `saveState()`**, jadi di HP highlight daftar kamera jadi basi dan pilihan tidak
@@ -40,7 +70,7 @@ Dua jenis pekerjaan:
   fullscreen, dan preset multi-view (1×1 / 2×2) di HP.
 
 Latar belakang AI: dependensi `@tensorflow/*` sudah dibuang saat perampingan image
-(lihat [../konteks/12-analisa-ukuran-image.md](../konteks/12-analisa-ukuran-image.md)),
+(lihat [../../konteks/12-analisa-ukuran-image.md](../../konteks/12-analisa-ukuran-image.md)),
 tapi **sisa UI & backend-nya masih ada**. Ini menuntaskannya.
 
 ---
@@ -52,7 +82,7 @@ AKTIF dipakai** untuk bulk add channel — **JANGAN DIHAPUS**. Namanya mirip `ap
 tapi fitur yang berbeda. Yang dihapus hanya `apk-cctv` dan `p2p-stream`.
 
 Cek cepat sebelum menyentuh apa pun: di
-[../../app/views/partials/admin_sidebar.ejs](../../app/views/partials/admin_sidebar.ejs)
+[../../../app/views/partials/admin_sidebar.ejs](../../../app/views/partials/admin_sidebar.ejs)
 baris 66, menu `dvr_apk` **berada di luar** blok komentar — itu yang aktif.
 
 ---
@@ -62,38 +92,38 @@ baris 66, menu `dvr_apk` **berada di luar** blok komentar — itu yang aktif.
 Indikator "AI Engine" di dashboard selalu memanggil `127.0.0.1:9090` yang tidak pernah
 ada, jadi hasilnya selalu null/offline.
 
-- [x] **[../../app/index.js](../../app/index.js)**
+- [x] **[../../../app/index.js](../../../app/index.js)**
   - Hapus blok `// AI Engine health` (~baris 5777–5793): HTTP GET ke
     `http://127.0.0.1:9090/api/ai/health`. Service itu tidak pernah ada di image.
   - Hapus field `ai_engine: null` (~baris 5715) dari objek health.
-- [x] **[../../app/views/admin_dashboard.ejs](../../app/views/admin_dashboard.ejs)**
+- [x] **[../../../app/views/admin_dashboard.ejs](../../../app/views/admin_dashboard.ejs)**
   - Hapus kartu `AI Engine` (~baris 85, `<div class="n-label mb-2">AI Engine</div>`)
     beserta wadahnya.
   - Hapus entri `['sys-ai','AI Engine']` dari array (~baris 146).
   - Hapus entri `['srv-ai','AI Engine']` dari array (~baris 174).
   - Hapus blok `if (s.ai_engine && ...)` (~baris 237–238) yang mengisi `sys-ai`.
   - ⚠️ Cek layout grid setelah kartu dihapus — kolom bisa jadi timpang.
-- [x] **[../../app/database_ai.js](../../app/database_ai.js)** — **hapus file** (172 baris).
+- [x] **[../../../app/database_ai.js](../../../app/database_ai.js)** — **hapus file** (172 baris).
   Yatim piatu: tak pernah di-`require` dari mana pun, jadi `migrateAiTables()` tak pernah
   jalan dan tabel `ai_speed_records`/`ai_vehicle_counts`/`ai_detection_zones` **tak pernah
   dibuat**. Menghapusnya tidak menyentuh DB.
 - [x] **Permission**: hapus key `admin_ai` & `admin_ai_report` dari default permission.
   Sekarang tersimpan di kolom JSON `level_permissions.permissions` (bukan kolom terpisah).
-  Cari di [../../app/database.js](../../app/database.js) / services tempat default JSON
+  Cari di [../../../app/database.js](../../../app/database.js) / services tempat default JSON
   dibuat. **Data lama di DB tidak otomatis bersih** — kalau Permission Manager masih
   menampilkan baris AI, perlu migrasi kecil yang menghapus dua key itu dari JSON tiap baris.
 
 ## Bagian 2 — APK CCTV
 
-- [x] **[../../app/views/admin_apk_cctv.ejs](../../app/views/admin_apk_cctv.ejs)** — hapus file (879 baris).
-- [x] **[../../app/index.js](../../app/index.js)** — hapus route `GET /admin/apk-cctv` (~baris 2029–2040).
-- [x] **[../../app/views/partials/admin_sidebar.ejs](../../app/views/partials/admin_sidebar.ejs)**
+- [x] **[../../../app/views/admin_apk_cctv.ejs](../../../app/views/admin_apk_cctv.ejs)** — hapus file (879 baris).
+- [x] **[../../../app/index.js](../../../app/index.js)** — hapus route `GET /admin/apk-cctv` (~baris 2029–2040).
+- [x] **[../../../app/views/partials/admin_sidebar.ejs](../../../app/views/partials/admin_sidebar.ejs)**
       — hapus baris menu APK (baris 63) yang ada di dalam blok komentar.
 
 ## Bagian 3 — P2P Stream
 
-- [x] **[../../app/views/admin_p2p_stream.ejs](../../app/views/admin_p2p_stream.ejs)** — hapus file (603 baris).
-- [x] **[../../app/index.js](../../app/index.js)**
+- [x] **[../../../app/views/admin_p2p_stream.ejs](../../../app/views/admin_p2p_stream.ejs)** — hapus file (603 baris).
+- [x] **[../../../app/index.js](../../../app/index.js)**
   - Hapus route `GET /admin/p2p-stream` (~baris 2042–2050).
   - Hapus route `GET /api/p2p/stream-status` (~baris 2052+).
 - [x] **sidebar** — hapus baris menu P2P (baris 64).
@@ -105,14 +135,14 @@ ada, jadi hasilnya selalu null/offline.
 
 ## Verifikasi setelah eksekusi
 
-- [ ] `grep -rn "ai_engine\|admin_ai\|apk-cctv\|apk_cctv\|p2p" app/ --include="*.js" --include="*.ejs" | grep -v node_modules`
+- [x] `grep -rn "ai_engine\|admin_ai\|apk-cctv\|apk_cctv\|p2p" app/ --include="*.js" --include="*.ejs" | grep -v node_modules`
       → hanya boleh menyisakan `dvr_apk` (fitur aktif) dan referensi di `install.sh`
       (skrip bare-metal warisan, di luar cakupan).
-- [ ] Dashboard admin dibuka → tidak ada kartu "AI Engine", layout grid tidak timpang.
-- [ ] Sidebar → menu APK & P2P hilang, **DVR/NVR MASIH ADA**.
-- [ ] Buka `/admin/apk-cctv` & `/admin/p2p-stream` → 404 (route hilang, wajar).
-- [ ] Permission Manager dibuka → tidak ada baris AI.
-- [ ] `docker compose -f docker-compose.lookna.yml up -d --build` → container healthy,
+- [x] Dashboard admin dibuka → tidak ada kartu "AI Engine", layout grid tidak timpang.
+- [x] Sidebar → menu APK & P2P hilang, **DVR/NVR MASIH ADA**.
+- [x] Buka `/admin/apk-cctv` & `/admin/p2p-stream` → 404 (route hilang, wajar).
+- [x] Permission Manager dibuka → tidak ada baris AI.
+- [x] `docker compose -f docker-compose.lookna.yml up -d --build` → container healthy,
       `GET /login` 200.
 
 ---
@@ -127,7 +157,7 @@ Ditambahkan atas laporan user 2026-07-21: dibuka dari HP, live tampil normal tap
 
 ## Akar masalah (sudah ditelusuri)
 
-Dua hal bertumpuk di [../../app/views/index.ejs](../../app/views/index.ejs):
+Dua hal bertumpuk di [../../../app/views/index.ejs](../../../app/views/index.ejs):
 
 1. **Baris 815** — tile live memakai `<video ... playsinline autoplay muted>`
    **tanpa atribut `controls`**. Jadi tidak ada UI audio sama sekali. Saat fullscreen,
@@ -171,12 +201,12 @@ Artinya ini sekaligus memperbaiki pola overlay yang memang tidak ramah sentuh.
 
 ## Verifikasi
 
-- [ ] Buka live dari **HP** (bukan emulator desktop): tombol audio terlihat tanpa
+- [x] Buka live dari **HP** (bukan emulator desktop): tombol audio terlihat tanpa
       fullscreen, dan bisa ditekan dengan jari.
-- [ ] Tekan → audio menyala; tekan lagi → mati. Ikon berubah sesuai state.
-- [ ] Unmute kamera lain → kamera sebelumnya otomatis mute.
-- [ ] Di desktop perilaku hover lama **tidak berubah**.
-- [ ] Kamera embed tidak terpengaruh.
+- [x] Tekan → audio menyala; tekan lagi → mati. Ikon berubah sesuai state.
+- [x] Unmute kamera lain → kamera sebelumnya otomatis mute.
+- [x] Di desktop perilaku hover lama **tidak berubah**.
+- [x] Kamera embed tidak terpengaruh.
 
 ---
 
@@ -187,7 +217,7 @@ Pertanyaan user 2026-07-21: mungkinkah versi HP punya multi-view seperti di web?
 ## Jawaban: BISA — CSS-nya sudah siap, tapi ada DUA penghalang di kode
 
 User melaporkan: *"di hp gak ada pilihan grid view, hanya bisa 1 view"* — benar, dan
-setelah ditelusuri [../../app/views/index.ejs](../../app/views/index.ejs) penyebabnya
+setelah ditelusuri [../../../app/views/index.ejs](../../../app/views/index.ejs) penyebabnya
 ada **dua**, bukan satu. Ini penting: memperbaiki salah satu saja menghasilkan
 perilaku yang membingungkan.
 
@@ -242,7 +272,7 @@ serentak di HP kelas menengah berarti panas, baterai terkuras, dan seringnya
 **stream gagal main** karena batas decoder hardware (banyak HP hanya sanggup 4–8
 decode aktif). Sudah terbukti relevan di proyek ini — transcode H.265→H.264 memang
 sengaja dilakukan karena keterbatasan decoder klien
-(lihat [../konteks/06-temuan-lapangan.md](../konteks/06-temuan-lapangan.md)).
+(lihat [../../konteks/06-temuan-lapangan.md](../../konteks/06-temuan-lapangan.md)).
 
 ## Rekomendasi
 
@@ -262,14 +292,14 @@ nyata tanpa menjanjikan sesuatu yang perangkatnya tak sanggup.
 
 ## Verifikasi
 
-- [ ] Buka live dari HP → tombol 1×1 & 2×2 terlihat dan bisa ditekan.
-- [ ] Tekan 2×2 → 4 kamera tampil, **semuanya benar-benar memutar** (bukan spinner
+- [x] Buka live dari HP → tombol 1×1 & 2×2 terlihat dan bisa ditekan.
+- [x] Tekan 2×2 → 4 kamera tampil, **semuanya benar-benar memutar** (bukan spinner
       menggantung). Kalau ada yang gagal, itu batas decoder — turunkan ke 1×1.
-- [ ] **Tap kamera lain saat mode 2×2 → TIDAK balik ke 1 view** (ini bukti penghalang #2
+- [x] **Tap kamera lain saat mode 2×2 → TIDAK balik ke 1 view** (ini bukti penghalang #2
       benar-benar teratasi; kalau masih reset, perbaikan baris 756 belum kena).
-- [ ] Tap kamera saat mode 1×1 → tetap berganti seperti biasa (perilaku lama terjaga).
+- [x] Tap kamera saat mode 1×1 → tetap berganti seperti biasa (perilaku lama terjaga).
 - [ ] Amati panas & baterai setelah ~5 menit di 2×2.
-- [ ] Desktop tidak berubah sama sekali.
+- [x] Desktop tidak berubah sama sekali.
 
 ---
 

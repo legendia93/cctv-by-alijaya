@@ -765,19 +765,27 @@
         }
 
         // --- Core Functions ---
+        // Batas tile di HP. Lebih dari 4 tidak masuk akal di layar sempit: tile jadi
+        // ~123px dan tiap tile = satu HLS decode, HP kelas menengah kehabisan decoder.
+        const MOBILE_MAX_TILES = 4;
+
         function toggleCameraSelection(id) {
             const isMobile = window.innerWidth < 1024;
-            // Di HP: saat mode 1 view, tap = ganti kamera (perilaku lama). Begitu grid
-            // sudah >1 tile, tap = tambah/buang seperti desktop supaya multi-view tidak
-            // langsung balik ke 1 view.
+            // Di HP saat mode 1 view: tap = ganti kamera (perilaku lama).
             if (isMobile && selectedCameraIds.length <= 1) {
                 selectedCameraIds = [String(id)];
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
                 const idx = selectedCameraIds.indexOf(String(id));
                 if (idx === -1) {
-                    // No limit - allow unlimited cameras
                     selectedCameraIds.push(String(id));
+                    // Grid HP dikunci maksimal 4 tile: kamera terlama digeser keluar
+                    // supaya tap selalu terasa berhasil, bukan ditolak diam-diam.
+                    if (isMobile) {
+                        while (selectedCameraIds.length > MOBILE_MAX_TILES) {
+                            selectedCameraIds.shift();
+                        }
+                    }
                 } else {
                     selectedCameraIds.splice(idx, 1);
                 }
@@ -841,14 +849,14 @@
                     </div>
                     <!-- Controls Overlay -->
                     ${!isEmbed ? `<div class="absolute top-2 right-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex gap-2">
-                        <button onclick="toggleAudio('video-${id}')" id="audio-btn-${id}" class="p-2 bg-slate-950/80 text-white rounded-lg hover:bg-amber-600 transition shadow-xl border border-white/10 btn-press" title="Suara">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
+                        <button onclick="toggleAudio('video-${id}')" id="audio-btn-${id}" class="p-1.5 bg-slate-950/80 text-white rounded-lg hover:bg-amber-600 transition shadow-xl border border-white/10 btn-press" title="Suara">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
                         </button>
-                        <button onclick="takeScreenshot('video-${id}', '${cam?.nama || 'Camera'}')" class="p-2 bg-slate-950/80 text-white rounded-lg hover:bg-blue-600 transition shadow-xl border border-white/10 btn-press" title="Screenshot">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <button onclick="takeScreenshot('video-${id}', '${cam?.nama || 'Camera'}')" class="p-1.5 bg-slate-950/80 text-white rounded-lg hover:bg-blue-600 transition shadow-xl border border-white/10 btn-press" title="Screenshot">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </button>
-                        <button onclick="toggleFullscreen('video-${id}')" class="p-2 bg-slate-950/80 text-white rounded-lg hover:bg-emerald-600 transition shadow-xl border border-white/10 btn-press" title="Fullscreen">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                        <button onclick="toggleFullscreen('video-${id}')" class="p-1.5 bg-slate-950/80 text-white rounded-lg hover:bg-emerald-600 transition shadow-xl border border-white/10 btn-press" title="Fullscreen">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
                         </button>
                     </div>` : ''}
                 </div>
@@ -1721,7 +1729,8 @@
                 .filter(cam => cam.isOwned === true && cam.isPlayable !== false)
                 .map(cam => String(cam.id));
             if (owned.length === 0) return false;
-            selectedCameraIds = owned.slice(0, 16);
+            // Login pertama dari HP tidak boleh langsung memuat 16 tile.
+            selectedCameraIds = owned.slice(0, window.innerWidth < 1024 ? MOBILE_MAX_TILES : 16);
             updateGrid();
             return true;
         }
@@ -1742,9 +1751,14 @@
                 try {
                     const state = JSON.parse(saved);
                     // Validate camera IDs - only keep IDs that exist in current cameras list
-                    const validIds = (state.selected || []).filter(id =>
+                    let validIds = (state.selected || []).filter(id =>
                         cameras.some(cam => String(cam.id) === String(id))
                     );
+                    // State bisa datang dari sesi desktop (mis. 9 kamera). Tanpa
+                    // pemotongan ini, membukanya dari HP langsung memuat 9 tile.
+                    if (window.innerWidth < 1024 && validIds.length > MOBILE_MAX_TILES) {
+                        validIds = validIds.slice(0, MOBILE_MAX_TILES);
+                    }
                     selectedCameraIds = validIds;
                     console.log('Loaded state - Valid camera IDs:', validIds);
 
@@ -2358,9 +2372,11 @@
                 return;
             }
             
-            // Select first N cameras
+            // Select first N cameras. Di HP dibatasi MOBILE_MAX_TILES walau preset
+            // yang diminta lebih besar (pengaman kalau nanti ada tombol 3×3 di mobile).
+            const limit = window.innerWidth < 1024 ? Math.min(maxCameras, MOBILE_MAX_TILES) : maxCameras;
             const availableCameras = cameras.filter(cam => cam.isPlayable !== false);
-            const camerasToSelect = availableCameras.slice(0, maxCameras).map(cam => String(cam.id));
+            const camerasToSelect = availableCameras.slice(0, limit).map(cam => String(cam.id));
             
             if (camerasToSelect.length === 0) {
                 showNotification('ℹ️ Tidak ada kamera yang dapat diakses', 'info');
