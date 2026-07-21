@@ -42,7 +42,7 @@
 </div>
 
 <!-- Stats Cards (bento) -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
     <div class="n-card p-6 flex flex-col justify-between min-h-[150px]">
         <div class="flex items-start justify-between">
             <svg class="w-6 h-6" style="color:var(--n-ink-soft);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -76,16 +76,6 @@
         </div>
     </div>
 
-    <div class="n-card p-6 flex flex-col justify-between min-h-[150px]">
-        <div class="flex items-start justify-between">
-            <svg class="w-6 h-6" style="color:var(--n-ink-soft);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            <span id="ai-status-badge" class="n-pill">Checking...</span>
-        </div>
-        <div>
-            <div class="n-label mb-2">AI Engine</div>
-            <p id="ai-status-text" class="n-num text-4xl">-- <span class="text-sm n-label" style="letter-spacing:.1em;">Kamera</span></p>
-        </div>
-    </div>
 </div>
 
 <!-- System Monitor Section -->
@@ -143,7 +133,7 @@
             <% const sysRows = [
                 ['sys-hostname','Hostname'],['sys-platform','Platform'],['sys-arch','Architecture'],
                 ['sys-cpu','Processor'],['sys-cores','CPU Cores'],['sys-temp','CPU Temperature'],
-                ['sys-uptime','Server Uptime'],['sys-node','Node.js Version'],['sys-version','App Version'],['sys-ai','AI Engine']
+                ['sys-uptime','Server Uptime'],['sys-node','Node.js Version'],['sys-version','App Version']
             ]; %>
             <% sysRows.forEach(function(r){ %>
             <div class="flex justify-between items-center py-2.5">
@@ -171,7 +161,7 @@
         <div class="divide-y" style="border-color:var(--n-line);">
             <% const srvRows = [
                 ['srv-mediamtx','MediaMTX API'],['srv-hls','HLS Streamer'],['srv-ffmpeg','FFmpeg Engine'],
-                ['srv-ai','AI Engine'],['srv-whatsapp','WhatsApp Bot'],['srv-telegram','Telegram Bot'],['srv-sqlite','Database (SQLite)']
+                ['srv-whatsapp','WhatsApp Bot'],['srv-telegram','Telegram Bot'],['srv-sqlite','Database (SQLite)']
             ]; %>
             <% srvRows.forEach(function(r){ %>
             <div class="flex items-center justify-between py-3">
@@ -234,12 +224,6 @@ async function fetchSystemInfo() {
         document.getElementById('sys-node').innerText = s.node_version || '--';
         document.getElementById('sys-version').innerText = s.app_version || '--';
 
-        if (s.ai_engine && s.ai_engine.status === 'ok') {
-            document.getElementById('sys-ai').innerText = 'Online (' + (s.ai_engine.active_cameras||0) + ' cam)';
-        } else {
-            document.getElementById('sys-ai').innerText = 'Offline';
-        }
-
         if (s.disks && s.disks.length > 0) {
             const dc = document.getElementById('disks-container');
             dc.innerHTML = '';
@@ -276,13 +260,6 @@ async function checkSystemServices() {
         updateService('srv-hls', true, 'Active', 'Inactive');
         const ff = await fetch('<%= base_path %>/api/youtube/check-ffmpeg').then(r => r.json()).catch(() => ({}));
         updateService('srv-ffmpeg', ff.available, 'Available', 'Missing');
-        const ai = await fetch('<%= base_path %>/api/ai-proxy/health').then(r => r.json()).catch(() => ({}));
-        const aiOk = ai && ai.status === 'ok';
-        updateService('srv-ai', aiOk, 'Online', 'Offline');
-        const aiBadge = document.getElementById('ai-status-badge');
-        aiBadge.innerText = aiOk ? 'Online' : 'Offline';
-        aiBadge.className = 'n-pill' + (aiOk ? '' : ' n-pill-accent');
-        document.getElementById('ai-status-text').innerHTML = ((ai && ai.active_cameras) || '0') + ' <span class="text-sm n-label" style="letter-spacing:.1em;">Kamera</span>';
         const wa = await fetch('<%= base_path %>/admin/whatsapp/status').then(r => r.json()).catch(() => ({}));
         updateService('srv-whatsapp', wa.connected, 'Connected', 'Disconnected');
         await fetch('<%= base_path %>/api/settings/telegram').then(r => r.json()).catch(() => ({}));

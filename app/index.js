@@ -2025,69 +2025,6 @@ app.get('/admin/dvr-apk', requireAuth, (req, res) => {
     });
 });
 
-// APK CCTV - Cloud/P2P Camera Addition (Seperti Aplikasi Android)
-app.get('/admin/apk-cctv', requireAuth, (req, res) => {
-    db.all("SELECT id, nama, camera_type FROM cameras", [], (err, cameraRows) => {
-        res.render('admin_apk_cctv', {
-            page: 'apk_cctv',
-            user: req.session.user,
-            cameras: cameraRows || [],
-            base_path: app.locals.base_path || '',
-            site: config.site || {}
-        });
-    });
-});
-
-// P2P Stream Manager - Professional P2P Stream Relay Management
-app.get('/admin/p2p-stream', requireAuth, (req, res) => {
-    res.render('admin_p2p_stream', {
-        page: 'p2p_stream',
-        user: req.session.user,
-        base_path: app.locals.base_path || '',
-        site: config.site || {}
-    });
-});
-
-// API: Check P2P Stream Status (for P2P relay via RTMP/HLS)
-app.get('/api/p2p/stream-status', requireApiAuth, (req, res) => {
-    const streamKey = req.query.key || '';
-    if (!streamKey) {
-        return res.json({ active: false, error: 'No stream key' });
-    }
-    
-    // Check if stream is active in MediaMTX
-    (async () => {
-        try {
-            const pathsData = await mediaMtxRequest('GET', '/v3/paths/list');
-            if (pathsData?.error) {
-                // Fallback: check if RTMP is running on port 1935
-                return res.json({ active: false, error: 'MediaMTX not available' });
-            }
-            
-            const items = pathsData.items || [];
-            const streamActive = items.some(p => p.name === streamKey && p.ready === true);
-            
-            if (streamActive) {
-                const hlsUrl = `${getHlsBaseUrl(req, config)}/${streamKey}/index.m3u8`;
-                res.json({ 
-                    active: true, 
-                    streamKey,
-                    hlsUrl,
-                    message: `Stream ${streamKey} is active`
-                });
-            } else {
-                res.json({ 
-                    active: false, 
-                    streamKey,
-                    message: `Stream ${streamKey} is not active. Use OBS/FFmpeg to relay.`
-                });
-            }
-        } catch (e) {
-            res.json({ active: false, error: e.message });
-        }
-    })();
-});
-
 // API: Test RTSP Connection for DVR/APK
 app.post('/api/dvr/test-rtsp', requireApiAuth, async (req, res) => {
     const { url, brand } = req.body;
@@ -5711,8 +5648,7 @@ app.get('/api/system/info', requireApiAuth, async (req, res) => {
             disks: [],
             uptime_sec: os.uptime(),
             node_version: process.version,
-            app_version: readLocalVersion(),
-            ai_engine: null
+            app_version: readLocalVersion()
         }
     };
     
@@ -5773,24 +5709,6 @@ app.get('/api/system/info', requireApiAuth, async (req, res) => {
             }
         } catch (e) {}
     }
-    
-    // AI Engine health
-    try {
-        const aiHealth = await new Promise((resolve) => {
-            const http = require('http');
-            const req = http.get('http://127.0.0.1:9090/api/ai/health', (res) => {
-                let data = '';
-                res.on('data', c => data += c);
-                res.on('end', () => {
-                    try { resolve(JSON.parse(data)); }
-                    catch (e) { resolve(null); }
-                });
-            });
-            req.on('error', () => resolve(null));
-            req.setTimeout(3000, () => { req.destroy(); resolve(null); });
-        });
-        d.ai_engine = aiHealth;
-    } catch (e) {}
     
     res.json(result);
 });
