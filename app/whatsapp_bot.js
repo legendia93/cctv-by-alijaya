@@ -523,8 +523,8 @@ ${sep}\n`;
         await sock.sendMessage(from, { text: '🔄 _Sedang mengambil data cuaca laut terbaru..._' });
 
         if (_db && _callbacks.getWeatherBundle) {
-            const refLat = (typeof _config?.map?.default_lat === 'number') ? _config.map.default_lat : -6.251973319579064;
-            const refLng = (typeof _config?.map?.default_lng === 'number') ? _config.map.default_lng : 107.92050843016914;
+            const refLat = (typeof _config?.map?.default_lat === 'number') ? _config.map.default_lat : -6.8563;
+            const refLng = (typeof _config?.map?.default_lng === 'number') ? _config.map.default_lng : 111.4372;
             _db.get(
                 "SELECT id, lat, lng, nama, lokasi FROM cameras WHERE lat IS NOT NULL AND lng IS NOT NULL ORDER BY (ABS(CAST(lat AS REAL) - ?) + ABS(CAST(lng AS REAL) - ?)) ASC, id ASC LIMIT 1",
                 [refLat, refLng],
@@ -1020,8 +1020,8 @@ Terima kasih telah berlangganan!`;
         await sock.sendMessage(from, { text: '🔄 _Sedang mengambil data cuaca laut terbaru..._' });
 
         if (_db && _callbacks.getWeatherBundle) {
-            const refLat = (typeof _config?.map?.default_lat === 'number') ? _config.map.default_lat : -6.251973319579064;
-            const refLng = (typeof _config?.map?.default_lng === 'number') ? _config.map.default_lng : 107.92050843016914;
+            const refLat = (typeof _config?.map?.default_lat === 'number') ? _config.map.default_lat : -6.8563;
+            const refLng = (typeof _config?.map?.default_lng === 'number') ? _config.map.default_lng : 111.4372;
             _db.get(
                 "SELECT id, lat, lng, nama, lokasi FROM cameras WHERE lat IS NOT NULL AND lng IS NOT NULL ORDER BY (ABS(CAST(lat AS REAL) - ?) + ABS(CAST(lng AS REAL) - ?)) ASC, id ASC LIMIT 1",
                 [refLat, refLng],

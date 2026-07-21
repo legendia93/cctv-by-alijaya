@@ -24,6 +24,8 @@ per topik di folder ini:
 | [09-style-table.md](09-style-table.md) | **Referensi styling tabel admin** — tabel transparan + garis tipis, toggle ON/OFF berwarna, section collapse |
 | [11-deploy-produksi.md](11-deploy-produksi.md) | **Cara deploy ke prod** — topologi TrueNAS/VM, storage NFS ber-quota, bootstrap + deploy.sh |
 | [13-fix-kontras-light.md](13-fix-kontras-light.md) | **Fix konten tak terlihat di tema light** — compat layer bocor, token kontras, cache-buster CSS |
+| [12-analisa-ukuran-image.md](12-analisa-ukuran-image.md) | **Kenapa image 2.39 GB** — TensorFlow 272 MB tak terpakai, ffmpeg dobel; Baileys terbukti bukan penyebab → dirampingkan jadi 1.2 GB |
+| [14-rebranding-lookna.md](14-rebranding-lookna.md) | **Rebranding `cctv-allinone` → `lookna`** — file yang berubah + pengaman migrasi container lama (wajib, cegah DB rusak) |
 
 Dokumentasi utama (bukan konteks sesi) ada di `docs/01..08-*.md`.
 
@@ -51,8 +53,8 @@ e:\Project\cctv\
 │   └── arsip/                # dokumen lama
 ├── data/                     # state persist (config, db, recordings) — TIDAK di-commit
 ├── docker/entrypoint.sh      # entrypoint 1-container
-├── Dockerfile.allinone       # image aktif (1 container)
-├── docker-compose.allinone.yml
+├── Dockerfile.lookna         # image aktif (1 container, multi-stage)
+├── docker-compose.lookna.yml # compose dev
 ├── docker-compose.dev.yml    # override dev (nodemon)
 ├── mediamtx.single.yml       # config MediaMTX (1 container)
 ├── config.docker.json        # template config
@@ -110,7 +112,7 @@ e:\Project\cctv\
   Ditambah **cache-buster CSS** (`?v=APP_VERSION`). Diverifikasi dengan auditor kontras
   WCAG nyata via Chrome DevTools Protocol: **16 halaman × 2 tema = 0 masalah**.
   Detail: [13-fix-kontras-light.md](13-fix-kontras-light.md).
-- 🟢 Stack DEV sedang **berjalan** saat sesi ditutup: `cctv-allinone` (healthy) di
+- 🟢 Stack DEV sedang **berjalan** saat sesi ditutup: `lookna` (healthy) di
   http://localhost:3003, 5 kamera terdaftar (semua `enable_recording=0` / live-only).
 
 ## Jalan cepat di sesi baru
@@ -118,10 +120,10 @@ e:\Project\cctv\
 ```bash
 cd /e/Project/cctv
 # cek apakah container masih jalan
-docker compose -f docker-compose.allinone.yml ps
+docker compose -f docker-compose.lookna.yml ps
 
 # kalau belum, jalankan DEV (auto-reload):
-docker compose -f docker-compose.allinone.yml -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.lookna.yml -f docker-compose.dev.yml up -d
 
 # buka http://localhost:3003
 ```

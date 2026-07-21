@@ -11,6 +11,8 @@ Urutan pengerjaan mengikuti kompleksitas naik.
 | 4 | Poles UI kamera | [done/04-poles-ui-kamera.md](done/04-poles-ui-kamera.md) | Rendah | ✅ done (A,C,D,E + 2-kolom, modal, peta kecil, toggle rekam) |
 | 5 | Deteksi stream terbaik (auto-probe RTSP) | [done/05-deteksi-stream.md](done/05-deteksi-stream.md) | Sedang | ✅ done |
 | 6 | Redesign UI — tema Nothing OS (feel human, bukan AI-generated) | [done/06-redesign-ui-nothing.md](done/06-redesign-ui-nothing.md) | Tinggi | ✅ done (token layer, shell, dashboard, kamera, publik, auth; hasil di [konteks/07](../konteks/07-tema-nothing-os.md)) |
+| 8 | Ganti logo, icon & OG image (preview link WA) | [08-logo-icon-og-image.md](08-logo-icon-og-image.md) | Rendah | ⏸️ kode selesai — **nunggu aset gambar dari user** |
+| 9 | Perampingan image 2.39 GB → ~1.2 GB | [09-perampingan-image.md](09-perampingan-image.md) | Sedang | 📋 planned (analisa selesai: [konteks/12](../konteks/12-analisa-ukuran-image.md)) |
 
 > Plan yang **✅ done** file-nya dipindah ke [`done/`](done/). Tabel di atas tetap
 > mencantumkan semua untuk jejak historis.

@@ -22,8 +22,8 @@ Detail lengkap: `docs/08-docker-arsitektur.md`.
 
 | File | Peran |
 |------|-------|
-| `Dockerfile.allinone` | Node 20 + ffmpeg + MediaMTX (download binary v1.16.1) + nodemon + script. Strip CRLF `.sh`. Build context = root, source dari `app/`. |
-| `docker-compose.allinone.yml` | 1 service `app`. Mount `data/*` + `mediamtx.single.yml` → `/app/mediamtx.yml`. |
+| `Dockerfile.lookna` | Node 20 + ffmpeg + MediaMTX (download binary v1.16.1) + nodemon + script. Strip CRLF `.sh`. Build context = root, source dari `app/`. |
+| `docker-compose.lookna.yml` | 1 service `app`. Mount `data/*` + `mediamtx.single.yml` → `/app/mediamtx.yml`. |
 | `docker-compose.dev.yml` | Override DEV: bind-mount `./app`→`/app`, `DEV_MODE=1` (nodemon), node_modules pakai anonymous volume. |
 | `mediamtx.single.yml` | Config MediaMTX: `authInternalUsers` (any, permissive - internal only), `pathDefaults.recordPath=/app/recordings/...`, port RTSP/HLS/API. |
 | `docker/entrypoint.sh` | Jalankan MediaMTX (background) lalu Node (foreground). `DEV_MODE=1` → pakai nodemon. tini sebagai PID 1. |

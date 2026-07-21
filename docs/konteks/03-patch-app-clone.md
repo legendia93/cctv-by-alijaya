@@ -97,7 +97,7 @@ pintu**, tipe dipilih di dropdown "Tipe Kamera" dalam form. Query lama
     resolusi tertinggi dulu, tandai `>=1280` "Main Stream", hitung `ratio` (gcd).
   - Kredensial disertakan di `url` hasil; pesan/log pakai `safeAuthority` tanpa cred.
   - **CATATAN operasional:** probe berjalan dari mesin/container Node, bukan browser —
-    IP kamera harus reachable dari sana. **Ubah `.js` → wajib `docker restart cctv-allinone`.**
+    IP kamera harus reachable dari sana. **Ubah `.js` → wajib `docker restart lookna`.**
   - **Terverifikasi** vs kamera Avaro/Tuya `10.10.111.4`: auto-pilih port 8554, temukan
     `/main` (2880×1620 HEVC) + `/sub` (640×360 H264) dalam ~7.5 dtk.
 - **UI `admin_cameras.ejs`** (dalam `#rtsp-fields`): tombol **"🔍 Deteksi Stream"** di

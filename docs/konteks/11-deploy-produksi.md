@@ -94,7 +94,7 @@ Retensi **7 hari** (~42 GB) memberi ruang aman.
 
 Setelah deploy pertama, generate VAPID keys sekali (perintahnya dicetak bootstrap):
 ```bash
-ssh root@10.10.17.6 "docker exec cctv-allinone node -e \"const w=require('web-push');console.log(JSON.stringify(w.generateVAPIDKeys(),null,2))\" > /opt/cctv/data/vapid-keys.json && docker restart cctv-allinone"
+ssh root@10.10.17.6 "docker exec lookna node -e \"const w=require('web-push');console.log(JSON.stringify(w.generateVAPIDKeys(),null,2))\" > /opt/cctv/data/vapid-keys.json && docker restart lookna"
 ```
 
 ## 5. Yang dilakukan `deploy.sh`
@@ -102,8 +102,8 @@ ssh root@10.10.17.6 "docker exec cctv-allinone node -e \"const w=require('web-pu
 ```
 [0/5] tulis app/version.js  ← semver tanpa "v"
 [1/5] sed tag di docker-compose.prod.yml (lokal)
-[2/5] docker build -f Dockerfile.allinone
-[3/5] docker push 10.10.17.6:5000/cctv-allinone:vX
+[2/5] docker build -f Dockerfile.lookna
+[3/5] docker push 10.10.17.6:5000/lookna:vX
 [4/5] scp compose → ssh → pull → up -d --no-deps --force-recreate
 [5/5] verifikasi: status container + df storage + 15 baris log
 ```

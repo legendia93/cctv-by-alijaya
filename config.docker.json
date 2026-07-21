@@ -23,14 +23,14 @@
         "discovery_timeout": 8000
     },
     "map": {
-        "default_lat": -6.252412341147035,
-        "default_lng": 107.92064112262626,
-        "default_zoom": 13
+        "default_lat": -6.8563,
+        "default_lng": 111.4372,
+        "default_zoom": 15
     },
     "site": {
-        "title": "CCTV ONLINE",
-        "footer": "CCTV",
-        "running_text": "========== Layanan live stream CCTV =========="
+        "title": "lookna",
+        "footer": "lookna",
+        "running_text": "========== lookna — Layanan live stream CCTV =========="
     },
     "recording": {
         "enabled": true,

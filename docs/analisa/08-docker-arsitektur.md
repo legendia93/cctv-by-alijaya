@@ -67,7 +67,7 @@ kerumitan & kerapuhannya di sini.
 
 ## File
 
-Aktif (1 container): `Dockerfile.allinone`, `docker-compose.allinone.yml`,
+Aktif (1 container): `Dockerfile.lookna`, `docker-compose.lookna.yml`,
 `docker-compose.dev.yml`, `mediamtx.single.yml`, `docker/entrypoint.sh`.
 
 Arsip (2 container, referensi saja): `Dockerfile`, `docker-compose.yml`,

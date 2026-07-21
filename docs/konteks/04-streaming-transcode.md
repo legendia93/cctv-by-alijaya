@@ -42,7 +42,7 @@ pakai H.265 (lebih hemat ~40-50% storage/bandwidth vs H.264). Jadi:
 
 `ready: true` = stream online. Cek:
 ```bash
-docker exec cctv-allinone curl -s http://127.0.0.1:9123/v3/paths/list | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const d=JSON.parse(s);d.items.forEach(p=>console.log(p.name,'ready:',p.ready,p.tracks||''))})"
+docker exec lookna curl -s http://127.0.0.1:9123/v3/paths/list | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const d=JSON.parse(s);d.items.forEach(p=>console.log(p.name,'ready:',p.ready,p.tracks||''))})"
 ```
 - `cam_X_input ready:true [H265,...]` = kamera ke-pull, codec asli.
 - `cam_X ready:true [H264,...]` = transcode/copy jalan, browser bisa nonton.

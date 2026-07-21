@@ -2008,8 +2008,8 @@ app.get('/admin/cameras', requireAuth, (req, res) => {
                 user: req.session.user,
                 base_path: app.locals.base_path || '',
                 site: config.site || {},
-                map: config.map || { default_lat: -6.2517, default_lng: 107.9207, default_zoom: 13 },
-                mapConfig: config.map || { default_lat: -6.2517, default_lng: 107.9207, default_zoom: 13 }
+                map: config.map || { default_lat: -6.8563, default_lng: 111.4372, default_zoom: 15 },
+                mapConfig: config.map || { default_lat: -6.8563, default_lng: 111.4372, default_zoom: 15 }
             });
         });
     });
@@ -5485,8 +5485,10 @@ async function checkMarineWeather() {
         return null;
     };
 
-    const refLat = (config.map && typeof config.map.default_lat === 'number') ? config.map.default_lat : -0.8173;
-    const refLng = (config.map && typeof config.map.default_lng === 'number') ? config.map.default_lng : 103.4616;
+    // Fallback: Sendangmulyo, Bulu, Rembang (area layanan) — dipakai hanya kalau
+    // config.map kosong/rusak, supaya cuaca tidak menampilkan kota yang tak relevan.
+    const refLat = (config.map && typeof config.map.default_lat === 'number') ? config.map.default_lat : -6.8563;
+    const refLng = (config.map && typeof config.map.default_lng === 'number') ? config.map.default_lng : 111.4372;
 
     const cam = await new Promise((resolve) => {
         db.get(
@@ -6046,8 +6048,8 @@ app.get('/api/weather', async (req, res) => {
         }
 
         // Gunakan koordinat dari config.json (default map location)
-        const refLat = (config.map && typeof config.map.default_lat === 'number') ? config.map.default_lat : -6.251973319579064;
-        const refLng = (config.map && typeof config.map.default_lng === 'number') ? config.map.default_lng : 107.92050843016914;
+        const refLat = (config.map && typeof config.map.default_lat === 'number') ? config.map.default_lat : -6.8563;
+        const refLng = (config.map && typeof config.map.default_lng === 'number') ? config.map.default_lng : 111.4372;
         
         // Langsung gunakan koordinat config untuk cuaca, tidak mencari kamera terdekat
         const data = await getWeatherBundle(refLat, refLng);

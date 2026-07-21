@@ -1,5 +1,5 @@
 # ==========================================================================
-# CCTV Monitoring - ALL-IN-ONE image (Opsi C)
+# lookna - CCTV Monitoring ALL-IN-ONE image (Opsi C) — MULTI-STAGE
 #
 # Node app + MediaMTX + ffmpeg + transcode scripts in ONE container, matching
 # the app's original co-located (bare-metal) design. This makes H.265->H.264
@@ -7,18 +7,46 @@
 #
 # Build context = repo root; app source in ./app.
 # MediaMTX version pinned to match app/install.sh (1.16.1).
+#
+# MULTI-STAGE: modul native (sqlite3, bcrypt) di-compile di stage "builder"
+# yang punya make/g++/python3, lalu HANYA node_modules hasilnya yang disalin ke
+# stage runtime. Toolchain (~150 MB, /usr/lib/gcc saja 120 MB) tidak ikut dikirim.
+#
+# ⚠️ PENTING: basis kedua stage HARUS sama persis (node:20-bookworm-slim).
+# Binding .node terikat pada versi glibc + versi Node + arsitektur. Kalau basis
+# beda (mis. alpine/musl), image tetap ter-build tapi container MATI saat start
+# dengan "invalid ELF header".
 # ==========================================================================
+
+# ============================ STAGE 1: builder ============================
+FROM node:20-bookworm-slim AS builder
+
+# Toolchain HANYA di stage ini — dibuang bersama stage-nya.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3 \
+        make \
+        g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY app/package.json app/package-lock.json* ./
+# npm ci = install deterministik dari lock file. Fallback ke npm install kalau
+# lock tidak sinkron (mis. dependensi baru belum ter-lock).
+RUN (npm ci --omit=dev --no-audit --no-fund \
+     || npm install --omit=dev --no-audit --no-fund) \
+    && npm cache clean --force
+
+# ============================ STAGE 2: runtime ============================
 FROM node:20-bookworm-slim
 
 ARG MEDIAMTX_VERSION=1.16.1
 # Set to arm64v8 on ARM hosts (Raspberry/Orange Pi 64-bit). Default amd64 (PC/VPS).
 ARG MEDIAMTX_ARCH=amd64
 
+# Runtime only — TANPA make/g++/python3 (lihat catatan multi-stage di atas).
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ffmpeg \
-        python3 \
-        make \
-        g++ \
         sqlite3 \
         tzdata \
         curl \
@@ -42,10 +70,13 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
+# node_modules sudah jadi (native modules ter-compile) dari stage builder.
+COPY --from=builder /app/node_modules ./node_modules
 COPY app/package.json app/package-lock.json* ./
-RUN npm install --omit=dev --no-audit --no-fund || npm install --production --no-audit --no-fund
-# nodemon for optional DEV_MODE (auto-reload). Global, tiny; unused in prod.
-RUN npm install -g nodemon --no-audit --no-fund
+
+# nodemon untuk DEV_MODE (auto-reload). Entrypoint memanggilnya via `npx nodemon`
+# saat DEV_MODE=1, jadi harus tetap ada di image. Tak dipakai saat prod.
+RUN npm install -g nodemon --no-audit --no-fund && npm cache clean --force
 
 COPY app/ ./
 

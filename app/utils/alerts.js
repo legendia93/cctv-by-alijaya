@@ -239,8 +239,9 @@ class AlertSystem {
             const conditions = JSON.parse(rule.conditions || '{}');
             
             // Get weather data using fetch to /api/weather endpoint
-            const refLat = this.config.map?.default_lat || -0.8173;
-            const refLng = this.config.map?.default_lng || 103.4616;
+            // Fallback: Sendangmulyo, Bulu, Rembang (area layanan).
+            const refLat = this.config.map?.default_lat || -6.8563;
+            const refLng = this.config.map?.default_lng || 111.4372;
             
             const response = await fetch(`http://localhost:${this.config.server?.port || 3003}/api/weather?lat=${refLat}&lng=${refLng}`);
             const result = await response.json();

@@ -2,7 +2,7 @@
 # DEV override — live source + nodemon, NO rebuild on code change.
 #
 # Use together with the all-in-one compose:
-#   docker compose -f docker-compose.allinone.yml -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.lookna.yml -f docker-compose.dev.yml up -d
 #
 # What it does vs the base compose:
 #   - Bind-mounts ./app -> /app so edits on the host are seen instantly.

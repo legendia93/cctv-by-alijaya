@@ -13,8 +13,8 @@ File terkait (di **root** `E:\Project\cctv\`):
 
 | File | Fungsi |
 |------|--------|
-| [`Dockerfile.allinone`](../Dockerfile.allinone) | Image: Node 20 + ffmpeg + MediaMTX 1.16.1 + script |
-| [`docker-compose.allinone.yml`](../docker-compose.allinone.yml) | 1 service `app` |
+| [`Dockerfile.lookna`](../Dockerfile.lookna) | Image: Node 20 + ffmpeg + MediaMTX 1.16.1 + script |
+| [`docker-compose.lookna.yml`](../docker-compose.lookna.yml) | 1 service `app` |
 | [`docker-compose.dev.yml`](../docker-compose.dev.yml) | Override DEV: live source + nodemon |
 | [`mediamtx.single.yml`](../mediamtx.single.yml) | Config MediaMTX (auth + path `/app/recordings`) |
 | [`docker/entrypoint.sh`](../docker/entrypoint.sh) | Jalankan MediaMTX (bg) + Node (fg / nodemon) |
@@ -25,7 +25,7 @@ File terkait (di **root** `E:\Project\cctv\`):
 ## 1. Arsitektur (1 container)
 
 ```
-┌──────────────── container: cctv-allinone ────────────────┐
+┌──────────────── container: lookna ────────────────┐
 │  entrypoint.sh                                            │
 │   ├─ MediaMTX 1.16.1  (RTSP :8555, HLS :8856, API :9123)  │
 │   │     ├─ pull RTSP kamera  ──► cam_X_input             │
@@ -54,10 +54,10 @@ cp app/cameras.db data/cameras.db 2>/dev/null || : > data/cameras.db
 echo "[]" > data/subscriptions.json
 
 # Build image
-docker compose -f docker-compose.allinone.yml build
+docker compose -f docker-compose.lookna.yml build
 
 # Generate VAPID keys (JANGAN file 0 byte -> app crash saat start)
-docker run --rm -v "$PWD/data:/out" cctv-allinone \
+docker run --rm -v "$PWD/data:/out" lookna \
   sh -c 'node -e "const w=require(\"web-push\");process.stdout.write(JSON.stringify(w.generateVAPIDKeys(),null,2))" > /out/vapid-keys.json'
 # (Windows Git Bash: ganti $PWD/data -> path absolut, mis. E:/Project/cctv/data)
 ```
@@ -78,15 +78,15 @@ Edit `data/config.json`:
 ## 3. Jalankan (produksi)
 
 ```bash
-docker compose -f docker-compose.allinone.yml up -d
-docker compose -f docker-compose.allinone.yml logs -f
+docker compose -f docker-compose.lookna.yml up -d
+docker compose -f docker-compose.lookna.yml logs -f
 # buka http://localhost:3003
 ```
 
 ## 4. Jalankan (DEV — tanpa rebuild tiap ubah kode)
 
 ```bash
-docker compose -f docker-compose.allinone.yml -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.lookna.yml -f docker-compose.dev.yml up -d
 ```
 
 Mode ini:
@@ -119,9 +119,9 @@ IP kamera (di dev sudah diverifikasi reachable dari dalam container).
 ## 7. Operasional
 
 ```bash
-docker compose -f docker-compose.allinone.yml restart
-docker compose -f docker-compose.allinone.yml down          # data di ./data aman
-docker compose -f docker-compose.allinone.yml up -d --build  # setelah ubah Dockerfile/deps
+docker compose -f docker-compose.lookna.yml restart
+docker compose -f docker-compose.lookna.yml down          # data di ./data aman
+docker compose -f docker-compose.lookna.yml up -d --build  # setelah ubah Dockerfile/deps
 tar -czf cctv-data-backup.tar.gz data/                       # backup semua state
 ```
 

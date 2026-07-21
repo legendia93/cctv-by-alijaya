@@ -154,9 +154,10 @@ const SCHEMAS = {
         admin_numbers: { type: 'string', default: '' }
     },
     map: {
-        default_lat: { type: 'number', min: -90, max: 90, default: -6.2517 },
-        default_lng: { type: 'number', min: -180, max: 180, default: 107.9207 },
-        default_zoom: { type: 'number', min: 1, max: 18, default: 13 }
+        // Default: Desa Sendangmulyo, Kec. Bulu, Kab. Rembang (area layanan SEKAINET).
+        default_lat: { type: 'number', min: -90, max: 90, default: -6.8563 },
+        default_lng: { type: 'number', min: -180, max: 180, default: 111.4372 },
+        default_zoom: { type: 'number', min: 1, max: 18, default: 15 }
     },
     mediamtx: {
         host: { type: 'string', default: '127.0.0.1' },

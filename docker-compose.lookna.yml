@@ -1,5 +1,5 @@
 # ==========================================================================
-# CCTV Monitoring - ALL-IN-ONE compose (Opsi C)  — run from repo root.
+# lookna - CCTV Monitoring ALL-IN-ONE compose (Opsi C)  — run from repo root.
 #
 # ONE container: Node app + MediaMTX + ffmpeg + transcode scripts, sharing the
 # /app filesystem exactly like bare-metal. Recommended for this app because it
@@ -10,12 +10,12 @@
 #   cp config.docker.json data/config.json     # then set mediamtx.host = "127.0.0.1"
 #   cp app/cameras.db data/cameras.db 2>/dev/null || : > data/cameras.db
 #   echo "[]" > data/subscriptions.json
-#   docker compose -f docker-compose.allinone.yml build
-#   docker run --rm -v "$PWD/data:/out" cctv-allinone \
+#   docker compose -f docker-compose.lookna.yml build
+#   docker run --rm -v "$PWD/data:/out" lookna \
 #     sh -c 'node -e "const w=require(\"web-push\");process.stdout.write(JSON.stringify(w.generateVAPIDKeys(),null,2))" > /out/vapid-keys.json'
 #
 # Run:
-#   docker compose -f docker-compose.allinone.yml up -d
+#   docker compose -f docker-compose.lookna.yml up -d
 #   open http://localhost:3003
 # ==========================================================================
 
@@ -23,9 +23,9 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.allinone
-    image: cctv-allinone
-    container_name: cctv-allinone
+      dockerfile: Dockerfile.lookna
+    image: lookna
+    container_name: lookna
     restart: unless-stopped
     environment:
       - TZ=Asia/Jakarta

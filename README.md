@@ -1,4 +1,4 @@
-# CCTV Monitoring — Docker Edition
+# lookna — CCTV Monitoring, Docker Edition
 
 Versi ter-dockerisasi dari sistem monitoring CCTV
 [`alijayanet/cctv-monitoring`](https://github.com/alijayanet/cctv-monitoring).
@@ -88,7 +88,7 @@ docker run --rm node:20-alpine node -e \
 ### 4. Build image
 
 ```bash
-docker compose -f docker-compose.allinone.yml build
+docker compose -f docker-compose.lookna.yml build
 ```
 
 Butuh beberapa menit (mengunduh Node, MediaMTX, ffmpeg).
@@ -96,7 +96,7 @@ Butuh beberapa menit (mengunduh Node, MediaMTX, ffmpeg).
 ### 5. Generate VAPID keys (push notification)
 
 ```bash
-docker run --rm -v "$PWD/data:/out" cctv-allinone \
+docker run --rm -v "$PWD/data:/out" lookna \
   sh -c 'node -e "const wp=require(\"web-push\");process.stdout.write(JSON.stringify(wp.generateVAPIDKeys(),null,2))" > /out/vapid-keys.json'
 ```
 
@@ -106,7 +106,7 @@ docker run --rm -v "$PWD/data:/out" cctv-allinone \
 ### 6. Jalankan
 
 ```bash
-docker compose -f docker-compose.allinone.yml up -d
+docker compose -f docker-compose.lookna.yml up -d
 ```
 
 Buka **http://localhost:3003** dan login memakai kredensial dari `data/config.json`.
@@ -114,8 +114,8 @@ Buka **http://localhost:3003** dan login memakai kredensial dari `data/config.js
 Cek kesehatan:
 
 ```bash
-docker compose -f docker-compose.allinone.yml ps      # status harus healthy
-docker logs -f cctv-allinone                          # pantau log
+docker compose -f docker-compose.lookna.yml ps   # status harus healthy
+docker logs -f lookna                            # pantau log
 ```
 
 ---
@@ -140,7 +140,7 @@ docker logs -f cctv-allinone                          # pantau log
 Untuk mengembangkan tanpa rebuild tiap ubah kode:
 
 ```bash
-docker compose -f docker-compose.allinone.yml -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.lookna.yml -f docker-compose.dev.yml up -d
 ```
 
 Edit `.js` / `.ejs` / `.css` di `app/` → nodemon reload otomatis (~1 detik).
@@ -148,7 +148,7 @@ Edit `.js` / `.ejs` / `.css` di `app/` → nodemon reload otomatis (~1 detik).
 | Yang diubah | Perlu apa |
 |---|---|
 | `.ejs`, `.css`, aset statis | cukup **refresh browser** |
-| `.js` backend | otomatis reload (mode DEV); di mode produksi → `docker restart cctv-allinone` |
+| `.js` backend | otomatis reload (mode DEV); di mode produksi → `docker restart lookna` |
 | `package.json`, `Dockerfile` | **rebuild** image |
 
 > Perubahan CSS tidak muncul? Aplikasi ini PWA dengan service worker. Lakukan **satu kali**
@@ -167,7 +167,7 @@ Edit `.js` / `.ejs` / `.css` di `app/` → nodemon reload otomatis (~1 detik).
 | `8890/udp` | WebRTC | Hanya bila pakai WebRTC |
 
 Tidak butuh streaming dari luar? Komentari baris port selain `3003` di
-`docker-compose.allinone.yml` — lebih aman.
+`docker-compose.lookna.yml` — lebih aman.
 
 ---
 
@@ -175,18 +175,18 @@ Tidak butuh streaming dari luar? Komentari baris port selain `3003` di
 
 ```bash
 # Status & log
-docker compose -f docker-compose.allinone.yml ps
-docker logs -f cctv-allinone
+docker compose -f docker-compose.lookna.yml ps
+docker logs -f lookna
 
 # Restart (perlu setelah ubah .js backend di mode produksi)
-docker restart cctv-allinone
+docker restart lookna
 
 # Berhenti / hidupkan lagi
-docker compose -f docker-compose.allinone.yml down
-docker compose -f docker-compose.allinone.yml up -d
+docker compose -f docker-compose.lookna.yml down
+docker compose -f docker-compose.lookna.yml up -d
 
 # Rebuild setelah ubah Dockerfile / package.json
-docker compose -f docker-compose.allinone.yml up -d --build
+docker compose -f docker-compose.lookna.yml up -d --build
 ```
 
 ### Backup
@@ -194,9 +194,9 @@ docker compose -f docker-compose.allinone.yml up -d --build
 Semua state ada di `data/`. Hentikan container dulu agar SQLite konsisten:
 
 ```bash
-docker compose -f docker-compose.allinone.yml down
+docker compose -f docker-compose.lookna.yml down
 tar czf backup-$(date +%F).tar.gz data/
-docker compose -f docker-compose.allinone.yml up -d
+docker compose -f docker-compose.lookna.yml up -d
 ```
 
 ---
@@ -205,7 +205,7 @@ docker compose -f docker-compose.allinone.yml up -d
 
 **Container restart terus / langsung exit**
 ```bash
-docker logs cctv-allinone --tail 50
+docker logs lookna --tail 50
 ```
 Paling sering: `vapid-keys.json` kosong (ulangi langkah 5), atau `data/config.json` bukan
 JSON valid.
@@ -222,7 +222,7 @@ JSON valid.
 
 Kalau `up` dijalankan sebelum langkah 2, Docker membuat direktori kosong:
 ```bash
-docker compose -f docker-compose.allinone.yml down
+docker compose -f docker-compose.lookna.yml down
 rm -rf data/config.json data/cameras.db data/vapid-keys.json data/subscriptions.json
 # ulangi langkah 2, 3, 5
 ```
@@ -264,8 +264,8 @@ cctv-by-alijaya/
 │   ├── plan/                   # Rencana & backlog
 │   └── arsip/                  # Dokumen lama (referensi)
 ├── docker/entrypoint.sh
-├── Dockerfile.allinone
-├── docker-compose.allinone.yml # Setup aktif
+├── Dockerfile.lookna
+├── docker-compose.lookna.yml # Setup aktif
 ├── docker-compose.dev.yml      # Overlay DEV (nodemon)
 ├── mediamtx.single.yml         # Config MediaMTX 1-container
 └── config.docker.json          # Template config

@@ -13,17 +13,17 @@
 ### Mode DEV (auto-reload, dipakai selama development)
 ```bash
 cd /e/Project/cctv
-docker compose -f docker-compose.allinone.yml -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.lookna.yml -f docker-compose.dev.yml up -d
 ```
 - Bind-mount `./app` → edit langsung terbaca container, **TANPA rebuild image**.
 - **Edit `.ejs` / view → langsung tampil** di request berikutnya (cukup refresh browser).
   Tidak perlu restart. Ini karena `view cache` dimatikan saat `DEV_MODE=1`
   (lihat [index.js `app.set('view engine'...)`](../../app/index.js) — blok `if DEV_MODE`).
-- **Edit `.js` (logika server) → paling pasti `docker restart cctv-allinone`** (~beberapa
+- **Edit `.js` (logika server) → paling pasti `docker restart lookna`** (~beberapa
   detik, bukan rebuild). Nodemon dijalankan (dgn `--legacy-watch`) tapi polling lewat
   bind-mount `E:\` di Docker Desktop **Windows tidak andal** — jangan mengandalkannya.
 - MediaMTX tetap jalan saat Node restart.
-- **Rebuild image HANYA perlu** kalau ubah `package.json` (dep npm baru) atau `Dockerfile.allinone`.
+- **Rebuild image HANYA perlu** kalau ubah `package.json` (dep npm baru) atau `Dockerfile.lookna`.
 
 > **Akar masalah historis:** dulu edit `.ejs` "tidak muncul" karena **EJS view cache
 > di memori server** (bukan cache browser / service worker). Sudah diperbaiki via
@@ -31,44 +31,44 @@ docker compose -f docker-compose.allinone.yml -f docker-compose.dev.yml up -d
 
 ### Mode produksi
 ```bash
-docker compose -f docker-compose.allinone.yml up -d
+docker compose -f docker-compose.lookna.yml up -d
 ```
 
 ## Perintah harian
 
 ```bash
 # status
-docker compose -f docker-compose.allinone.yml ps
+docker compose -f docker-compose.lookna.yml ps
 
 # logs (ikuti)
-docker logs -f cctv-allinone
+docker logs -f lookna
 # atau
-docker compose -f docker-compose.allinone.yml logs -f
+docker compose -f docker-compose.lookna.yml logs -f
 
 # restart (mis. setelah ubah config.json / mediamtx.single.yml — bukan auto-reload)
-docker compose -f docker-compose.allinone.yml restart
+docker compose -f docker-compose.lookna.yml restart
 
 # stop (data di ./data aman)
-docker compose -f docker-compose.allinone.yml down
+docker compose -f docker-compose.lookna.yml down
 
 # rebuild setelah ubah Dockerfile/deps
-docker compose -f docker-compose.allinone.yml build
+docker compose -f docker-compose.lookna.yml build
 ```
 
 ## Cek state dari dalam container
 
 ```bash
 # daftar kamera di DB
-docker exec cctv-allinone sh -c "sqlite3 /app/cameras.db 'SELECT id,nama,url_rtsp,level FROM cameras;'"
+docker exec lookna sh -c "sqlite3 /app/cameras.db 'SELECT id,nama,url_rtsp,level FROM cameras;'"
 
 # status path/stream di MediaMTX (ready = online)
-docker exec cctv-allinone curl -s http://127.0.0.1:9123/v3/paths/list | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const d=JSON.parse(s);d.items.forEach(p=>console.log(p.name,'ready:',p.ready,p.tracks||''))})"
+docker exec lookna curl -s http://127.0.0.1:9123/v3/paths/list | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const d=JSON.parse(s);d.items.forEach(p=>console.log(p.name,'ready:',p.ready,p.tracks||''))})"
 
 # cek reachability kamera dari container (ganti IP)
-docker exec cctv-allinone node -e "const s=require('net').connect(554,'10.10.111.8');s.setTimeout(3000);s.on('connect',()=>{console.log('REACHABLE');s.destroy()});s.on('timeout',()=>{console.log('TIMEOUT');process.exit()});s.on('error',e=>console.log(e.code))"
+docker exec lookna node -e "const s=require('net').connect(554,'10.10.111.8');s.setTimeout(3000);s.on('connect',()=>{console.log('REACHABLE');s.destroy()});s.on('timeout',()=>{console.log('TIMEOUT');process.exit()});s.on('error',e=>console.log(e.code))"
 
 # log transcode per kamera
-docker exec cctv-allinone sh -c "cat stream_logs/transcode_cam_37_input.log | tail"
+docker exec lookna sh -c "cat stream_logs/transcode_cam_37_input.log | tail"
 ```
 
 ## Uji cepat via HTTP
@@ -89,6 +89,6 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3003/cam_37/index.m3u8
 
 - **Insert kamera langsung ke DB via sqlite CLI TIDAK mendaftarkan ke MediaMTX.**
   Selalu tambah lewat UI atau `POST /api/cameras` supaya `registerCamera()` jalan.
-- Perubahan `config.json` / `mediamtx.single.yml` butuh **restart** (`docker restart cctv-allinone`).
+- Perubahan `config.json` / `mediamtx.single.yml` butuh **restart** (`docker restart lookna`).
 - Perubahan **`.ejs`/view** → langsung tampil (view cache off), cukup refresh browser.
-- Perubahan **`.js`** → `docker restart cctv-allinone` (nodemon Windows tidak andal).
+- Perubahan **`.js`** → `docker restart lookna` (nodemon Windows tidak andal).
