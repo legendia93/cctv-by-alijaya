@@ -12,7 +12,8 @@ Urutan pengerjaan mengikuti kompleksitas naik.
 | 5 | Deteksi stream terbaik (auto-probe RTSP) | [done/05-deteksi-stream.md](done/05-deteksi-stream.md) | Sedang | ✅ done |
 | 6 | Redesign UI — tema Nothing OS (feel human, bukan AI-generated) | [done/06-redesign-ui-nothing.md](done/06-redesign-ui-nothing.md) | Tinggi | ✅ done (token layer, shell, dashboard, kamera, publik, auth; hasil di [konteks/07](../konteks/07-tema-nothing-os.md)) |
 | 8 | Ganti logo, icon & OG image (preview link WA) | [08-logo-icon-og-image.md](08-logo-icon-og-image.md) | Rendah | ⏸️ kode selesai — **nunggu aset gambar dari user** |
-| 9 | Perampingan image 2.39 GB → ~1.2 GB | [09-perampingan-image.md](09-perampingan-image.md) | Sedang | 📋 planned (analisa selesai: [konteks/12](../konteks/12-analisa-ukuran-image.md)) |
+| 9 | Perampingan image 2.39 GB → ~1.2 GB | [09-perampingan-image.md](09-perampingan-image.md) | Sedang | ✅ done (2.39 → **1.2 GB**, sudah live di prod v1.1.0) |
+| 10 | Hapus fitur mati (AI Engine, APK, P2P) + UI mobile | [10-hapus-fitur-mati.md](10-hapus-fitur-mati.md) | Rendah | 🔄 kode selesai 2026-07-21 (hapus **-1.780 baris**; audio & multi-view HP) — **nunggu verifikasi di HP** |
 
 > Plan yang **✅ done** file-nya dipindah ke [`done/`](done/). Tabel di atas tetap
 > mencantumkan semua untuk jejak historis.
