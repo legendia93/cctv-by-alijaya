@@ -11,7 +11,7 @@
 
 services:
   app:
-    image: localhost:5000/lookna:v1.1.0
+    image: localhost:5000/lookna:v1.2.1
     container_name: lookna
     restart: unless-stopped
     environment:
