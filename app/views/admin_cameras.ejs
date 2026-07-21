@@ -260,13 +260,10 @@
     </div>
 </div>
 
-<!-- ===== Layout 2 kolom: kiri daftar kamera, kanan tools ===== -->
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-
-<!-- KOLOM KIRI: Daftar Kamera -->
-<div class="xl:col-span-2">
-<div id="daftar-kamera" class="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 overflow-hidden mb-8" style="scroll-margin-top: 90px;">
-    <div class="p-3 border-b border-gray-700 flex flex-nowrap items-center gap-1.5 overflow-x-auto">
+<!-- ===== Daftar kamera full-width; tools ONVIF & Generator dipindah ke modal ===== -->
+<div>
+<div id="daftar-kamera" class="n-card overflow-hidden mb-8" style="background:transparent; scroll-margin-top: 90px;">
+    <div class="p-3 flex flex-nowrap items-center gap-1.5 overflow-x-auto" style="border-bottom:1px solid rgba(255,255,255,0.07);">
         <button type="button" onclick="openBulkForm()" class="n-btn whitespace-nowrap shrink-0" style="padding:5px 10px;font-size:10px;" title="Tambah banyak kamera dari 1 DVR/NVR">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h10M4 18h10"></path></svg>
             Massal
@@ -284,10 +281,19 @@
         <button onclick="filterCameras('embed')" id="filter-embed" class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition bg-gray-700 text-gray-400 hover:bg-gray-600 whitespace-nowrap shrink-0">
             Embed (<span id="count-embed"><%= cameras.filter(c => c.camera_type === 'embed').length %></span>)
         </button>
+        <!-- Kelompok kanan: cari + tools -->
         <div class="relative ml-auto shrink-0" style="width:180px;">
             <input id="cameraSearch" type="text" class="w-full bg-gray-900 border border-gray-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500 transition-all" placeholder="Cari kamera...">
             <svg class="w-3.5 h-3.5 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
+        <button type="button" onclick="openToolModal('onvifBackdrop')" class="n-btn whitespace-nowrap shrink-0" style="padding:5px 10px;font-size:10px;" title="Cari kamera ONVIF di jaringan lokal">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            ONVIF Scan
+        </button>
+        <button type="button" onclick="openToolModal('rtspGenBackdrop')" class="n-btn whitespace-nowrap shrink-0" style="padding:5px 10px;font-size:10px;" title="Bangun URL RTSP dari merek kamera">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+            Generator URL
+        </button>
     </div>
 
     <%
@@ -297,10 +303,17 @@
             userById[String(u.id)] = u.full_name ? (u.full_name + ' (@' + u.username + ')') : ('@' + u.username);
         });
     %>
+    <!-- Pola tabel: transparan + garis tipis (docs/konteks/style-table.md) -->
+    <style>
+        .cam-table td, .cam-table th { background: transparent; }
+        .cam-table tbody tr.camera-row td { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .cam-table tbody tr.camera-row:hover td { background: rgba(255, 255, 255, 0.035); }
+        .cam-table thead th { border-bottom-color: rgba(255, 255, 255, 0.07) !important; }
+    </style>
     <div class="overflow-x-auto">
-        <table class="w-full text-left">
+        <table class="cam-table w-full text-left">
             <thead>
-                <tr class="bg-gray-900/50 text-gray-500 text-[10px] uppercase tracking-widest font-black">
+                <tr class="text-gray-300 text-[10px] uppercase tracking-widest font-black">
                     <th class="px-3 py-2 border-b border-gray-700 text-center">ID</th>
                     <th class="px-3 py-2 border-b border-gray-700 text-center">Status</th>
                     <th class="px-3 py-2 border-b border-gray-700">Identitas Kamera</th>
@@ -309,7 +322,7 @@
                     <th class="px-3 py-2 border-b border-gray-700 text-center">Kelola</th>
                 </tr>
             </thead>
-            <tbody id="cameraTableBody" class="divide-y divide-gray-700">
+            <tbody id="cameraTableBody">
                 <% if (cameras.length === 0) { %>
                     <tr id="emptyStateRow">
                         <td colspan="6" class="p-0">
@@ -320,7 +333,7 @@
                                     </svg>
                                 </div>
                                 <div class="text-white font-bold text-lg mb-1">Belum ada kamera</div>
-                                <p class="text-gray-500 text-xs mb-6 max-w-xs">Tambahkan kamera RTSP atau embed untuk mulai memantau. Gunakan tombol di bawah atau fitur ONVIF Scan &amp; Generator URL.</p>
+                                <p class="text-gray-500 text-xs mb-6 max-w-xs">Tambahkan kamera RTSP atau embed untuk mulai memantau. Gunakan tombol di bawah, atau ONVIF Scan &amp; Generator URL di toolbar atas.</p>
                                 <button type="button" onclick="openCameraForm()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-emerald-900/20 transition transform active:scale-95 flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                                     <span class="text-xs uppercase tracking-widest">Tambah Kamera Pertama</span>
@@ -330,8 +343,8 @@
                     </tr>
                 <% } %>
                 <% cameras.forEach(function(camera) { %>
-                    <tr class="group hover:bg-gray-700/30 transition duration-150 camera-row" data-camera-type="<%= camera.camera_type || 'rtsp' %>">
-                        <td class="px-3 py-1.5 text-center text-gray-600 font-mono text-xs"><%= camera.id %></td>
+                    <tr class="group transition duration-150 camera-row" data-camera-type="<%= camera.camera_type || 'rtsp' %>">
+                        <td class="px-3 py-1.5 text-center text-gray-400 font-mono text-xs"><%= camera.id %></td>
                         <td class="px-3 py-1.5 text-center">
                             <div class="flex justify-center">
                                 <span id="admin-status-<%= camera.id %>" class="n-pill n-pill-xs cursor-pointer hover:opacity-70 transition"
@@ -353,13 +366,13 @@
                                     <span id="rec-badge-<%= camera.id %>" class="n-pill n-pill-xs <%= camera.enable_recording === 0 ? 'n-pill-live' : 'n-pill-accent' %>"><% if (camera.enable_recording !== 0) { %><span class="n-dot n-dot-live"></span><% } %><%= camera.enable_recording === 0 ? 'LIVE' : 'REC' %></span>
                                 <% } %>
                             </div>
-                            <div class="text-[10px] text-gray-500 font-mono truncate max-w-[200px]">
+                            <div class="text-[10px] text-gray-400 font-mono truncate max-w-[200px]">
                                 <%= camera.camera_type === 'embed' ? (camera.embed_url || 'No URL') : (camera.url_rtsp || 'No URL') %>
                             </div>
                         </td>
                         <td class="px-3 py-1.5">
                             <div class="flex items-center gap-2">
-                            <span class="text-gray-300 text-xs truncate max-w-[130px]"><%= camera.lokasi %></span>
+                            <span class="text-gray-100 text-xs truncate max-w-[130px]"><%= camera.lokasi %></span>
                             <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border shrink-0
                                 <%= camera.level === 'umum' ? 'bg-emerald-900/40 text-emerald-400 border-emerald-500/20' : 
                                     camera.level === 'member' ? 'bg-blue-900/40 text-blue-400 border-blue-500/20' : 
@@ -370,7 +383,7 @@
                         </td>
                         <td class="px-3 py-1.5">
                             <% if (camera.level === 'umum') { %>
-                                <span class="text-[10px] text-gray-500 italic">Publik (komunal)</span>
+                                <span class="text-[10px] text-gray-400 italic">Publik (komunal)</span>
                             <% } else if (camera.owner_id && userById[String(camera.owner_id)]) { %>
                                 <div class="flex items-center gap-1.5">
                                     <span class="w-6 h-6 rounded-full bg-blue-900/40 border border-blue-500/20 flex items-center justify-center text-[10px] shrink-0">👤</span>
@@ -411,13 +424,14 @@
         </table>
     </div>
 </div>
-</div><!-- /KOLOM KIRI -->
+</div><!-- /Daftar kamera -->
 
-<!-- KOLOM KANAN: Tools (ONVIF Scan + Generator URL) -->
-<div class="xl:col-span-1 space-y-4">
-
-<!-- ONVIF Scan Section -->
-<div class="n-card p-4">
+<!-- ===== Modal: ONVIF Scan ===== -->
+<div id="onvifBackdrop" class="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm hidden items-start justify-center overflow-y-auto p-4 md:p-8" onclick="if(event.target===this) closeToolModal('onvifBackdrop')">
+<div class="n-card p-4 w-full max-w-lg my-auto" style="background:var(--n-surface);">
+    <button type="button" onclick="closeToolModal('onvifBackdrop')" class="float-right text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-700/50 transition" title="Tutup (Esc)">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    </button>
     <h2 class="n-heading text-base mb-3 pb-2 flex items-center gap-2" style="border-bottom:1px solid var(--n-line);">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9a9 9 0 019-9m-9 9a9 9 0 000 18z"></path>
@@ -446,9 +460,14 @@
     </div>
     <div id="onvif_results" class="hidden mt-4 space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-2"></div>
 </div>
+</div><!-- /Modal ONVIF -->
 
-<!-- RTSP URL Generator Section -->
-<div class="n-card p-4">
+<!-- ===== Modal: Generator URL RTSP ===== -->
+<div id="rtspGenBackdrop" class="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm hidden items-start justify-center overflow-y-auto p-4 md:p-8" onclick="if(event.target===this) closeToolModal('rtspGenBackdrop')">
+<div class="n-card p-4 w-full max-w-lg my-auto" style="background:var(--n-surface);">
+    <button type="button" onclick="closeToolModal('rtspGenBackdrop')" class="float-right text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-700/50 transition" title="Tutup (Esc)">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    </button>
     <h2 class="n-heading text-base mb-3 pb-2 flex items-center gap-2" style="border-bottom:1px solid var(--n-line);">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
@@ -498,9 +517,7 @@
         <p id="rtspDescription" class="text-[10px] mt-2 italic" style="color:var(--n-ink-faint);"></p>
     </div>
 </div>
-
-</div><!-- /KOLOM KANAN -->
-</div><!-- /grid 2 kolom -->
+</div><!-- /Modal Generator URL -->
 
 <script>
     // Toggle Camera Type Fields
@@ -745,7 +762,9 @@
                 showModal(id ? 'Kamera berhasil diperbarui!' : 'Kamera baru berhasil ditambahkan!');
                 setTimeout(() => window.location.reload(), 1500);
             } else {
-                showModal('Gagal menyimpan kamera', 'error');
+                // Tampilkan alasan dari server (mis. validasi / error DB), bukan pesan generik.
+                const reason = await res.text().catch(() => '');
+                showModal(reason ? 'Gagal menyimpan kamera: ' + reason : 'Gagal menyimpan kamera', 'error');
             }
         } catch (err) { showModal('Kesalahan koneksi', 'error'); }
     };
@@ -966,7 +985,7 @@
                             <span class="text-[9px] font-black uppercase tracking-widest text-gray-500">${r.label}</span>
                             ${isRec ? '<span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-900/40 text-emerald-300 border border-emerald-500/30">Rekomendasi</span>' : ''}
                         </div>
-                        <div class="text-[10px] text-gray-500 font-mono truncate mt-1" title="${r.url}">${r.url}</div>
+                        <div class="text-[10px] text-gray-400 font-mono truncate mt-1" title="${r.url}">${r.url}</div>
                         ${notWidescreen ? '<div class="text-[10px] text-amber-400/80 mt-1">⚠ Rasio bukan 16:9 — kemungkinan sub-stream.</div>' : ''}
                     </div>
                     <button type="button" class="use-stream-btn bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-4 py-2 rounded-lg transition shrink-0" data-url="${r.url}">Pakai</button>
@@ -1277,6 +1296,25 @@
             bulkSetSubmitEnabled(true);
         }
     };
+
+    /* ===== Modal tools (ONVIF Scan & Generator URL RTSP) ===== */
+    function openToolModal(id) {
+        const b = document.getElementById(id);
+        if (!b) return;
+        b.classList.remove('hidden'); b.classList.add('flex');
+    }
+    function closeToolModal(id) {
+        const b = document.getElementById(id);
+        if (!b) return;
+        b.classList.add('hidden'); b.classList.remove('flex');
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        ['onvifBackdrop', 'rtspGenBackdrop'].forEach(function (id) {
+            const b = document.getElementById(id);
+            if (b && !b.classList.contains('hidden')) closeToolModal(id);
+        });
+    });
 
     /* ================= PREVIEW LIVE (klik badge status) ================= */
     const previewHlsBase = '<%= typeof hlsBaseUrl !== "undefined" ? hlsBaseUrl : "" %>';

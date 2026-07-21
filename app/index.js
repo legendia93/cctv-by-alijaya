@@ -15,6 +15,8 @@ const youtubeStream = require('./youtube_stream');
 const whatsappBot = require('./whatsapp_bot');
 const AlertSystem = require('./utils/alerts');
 const activityLogger = require('./services/activityLogger');
+// Versi app — diisi otomatis oleh scripts/deploy.sh saat deploy.
+const { APP_VERSION } = require('./version');
 
 // Utility imports
 const {
@@ -631,6 +633,14 @@ db.run("ALTER TABLE transactions ADD COLUMN proof_image TEXT", (err) => {});
 app.use((req, res, next) => {
     res.locals.base_path = app.locals.base_path || '';
     res.locals.site = config.site || {};
+    res.locals.appVersion = APP_VERSION;
+    // Base URL absolut untuk tag Open Graph. Scraper (WhatsApp/Telegram) tidak
+    // mengikuti path relatif, jadi og:image harus http(s)://... penuh.
+    // Di belakang Cloudflare Tunnel, protokol asli ada di X-Forwarded-Proto.
+    const ogProto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0].trim();
+    res.locals.og_base = (config.site && config.site.public_url)
+        ? String(config.site.public_url).replace(/\/+$/, '')
+        : `${ogProto}://${req.get('host')}${app.locals.base_path || ''}`;
     res.locals.hlsBaseUrl = getHlsBaseUrl(req, config);
     res.locals.months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     res.locals.isAdmin = !!req.session.user;
@@ -3648,7 +3658,7 @@ app.post('/admin/camera/add', requireAuth, (req, res) => {
             function (err) {
                 if (err) {
                     console.error('Error adding embed camera:', err.message);
-                    return res.status(500).send("Database Error");
+                    return res.status(500).send("Database Error: " + err.message);
                 }
                 const newCamId = this.lastID;
                 registerCamera({ id: newCamId, nama, lokasi, camera_type: 'embed', embed_url, embed_type }).catch(() => {});
@@ -3672,8 +3682,8 @@ app.post('/admin/camera/add', requireAuth, (req, res) => {
             [nama, lokasi, url_rtsp, lat, lng, is_public || 1, level || 'umum', owner_id || null, 'rtsp', rtspEnableRecording],
             function (err) {
                 if (err) {
-                    console.error(err.message);
-                    return res.status(500).send("Database Error");
+                    console.error('Error adding rtsp camera:', err.message);
+                    return res.status(500).send("Database Error: " + err.message);
                 }
                 const newCamId = this.lastID;
                 registerCamera({ id: newCamId, nama, lokasi, url_rtsp })

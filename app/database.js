@@ -48,7 +48,13 @@ const db = new sqlite3.Database(dbPath, (err) => {
                     { name: 'youtube_stream_key', type: 'TEXT DEFAULT NULL' },
                     { name: 'youtube_quality', type: 'TEXT DEFAULT NULL' },
                     { name: 'level', type: "TEXT DEFAULT 'umum'" },
-                    { name: 'owner_id', type: 'INTEGER DEFAULT NULL' }
+                    { name: 'owner_id', type: 'INTEGER DEFAULT NULL' },
+                    // Kamera embed (HLS/YouTube/iframe) + toggle rekam per-kamera.
+                    // DB lama dibuat sebelum fitur ini ada, jadi harus ikut migrasi.
+                    { name: 'camera_type', type: "TEXT DEFAULT 'rtsp'" },
+                    { name: 'embed_url', type: 'TEXT DEFAULT NULL' },
+                    { name: 'embed_type', type: 'TEXT DEFAULT NULL' },
+                    { name: 'enable_recording', type: 'INTEGER DEFAULT 1' }
                 ];
                 ptzColumns.forEach(col => {
                     db.run(`ALTER TABLE cameras ADD COLUMN ${col.name} ${col.type}`, (err) => {

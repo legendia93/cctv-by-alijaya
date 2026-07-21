@@ -8,7 +8,26 @@
     <link rel="icon" href="<%= base_path %>/icon-192x192.png">
     <link rel="apple-touch-icon" href="<%= base_path %>/icon-192x192.png">
     <title><%= site.title %> - Live Dashboard</title>
-    
+
+    <!-- ===== Open Graph / preview link (WhatsApp, Telegram, FB) =====
+         og:image WAJIB URL absolut — scraper tak paham path relatif.
+         og:image:width/height bikin WA render banner lebar, bukan ikon kecil. -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="<%= site.title %>">
+    <meta property="og:title" content="<%= site.title %> - Live Dashboard">
+    <meta property="og:description" content="Pantau CCTV secara langsung, kapan saja dan di mana saja.">
+    <meta property="og:url" content="<%= og_base %>/">
+    <meta property="og:image" content="<%= og_base %>/og-image.png">
+    <meta property="og:image:secure_url" content="<%= og_base %>/og-image.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="<%= site.title %>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<%= site.title %> - Live Dashboard">
+    <meta name="twitter:description" content="Pantau CCTV secara langsung, kapan saja dan di mana saja.">
+    <meta name="twitter:image" content="<%= og_base %>/og-image.png">
+
     <!-- ===== Nothing OS theme (sumber kebenaran tunggal) ===== -->
     <%- include('partials/head_theme') %>
     <script>
@@ -294,7 +313,7 @@
             </div>
             <div class="w-full h-px bg-slate-800"></div>
             <div class="flex items-center gap-3">
-                <div class="w-2 h-2 bg-emerald-500 rounded-full blink"></div>
+                <div class="w-2 h-2 rounded-full blink" style="background:#FF2A34;"></div>
                 <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">Server Live Status</span>
             </div>
             <button onclick="closeTimeModal()" class="mt-4 w-full py-3 bg-slate-800 text-white text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-slate-700 transition">Tutup</button>
@@ -344,8 +363,10 @@
                     </div>
                     <div class="h-6 w-px bg-slate-800"></div>
                     <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 bg-emerald-500 rounded-full blink"></div>
+                        <div class="w-2 h-2 rounded-full blink" style="background:#FF2A34;"></div>
                         <span class="text-[9px] font-black text-slate-300 uppercase tracking-widest">Server Live</span>
+                        <!-- Versi app (diisi scripts/deploy.sh) -->
+                        <span class="text-[9px] font-bold text-slate-500 tracking-widest" title="Versi aplikasi">v<%= typeof appVersion !== 'undefined' ? appVersion : '—' %></span>
                     </div>
                 </div>
 
@@ -481,7 +502,7 @@
                 <div class="mt-4 p-3 rounded-xl bg-slate-950/50 border border-slate-800/50">
                     <div class="flex items-center justify-between text-[9px] text-slate-600">
                         <span class="flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span class="w-1.5 h-1.5 rounded-full" style="background:#FF2A34;"></span>
                             <span id="mobileOnlineCount">0</span> Online
                         </span>
                         <span class="flex items-center gap-1">
@@ -527,7 +548,7 @@
                 <% const umumCams = cameras.filter(c => c.isOwned !== true); %>
                 <% if (hasOwnedCameras && ownedCams.length > 0) { %>
                     <div class="px-1 pb-1 text-[9px] font-black text-emerald-500/80 uppercase tracking-widest flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Kamera Saya
+                        <span class="w-1.5 h-1.5 rounded-full" style="background:#FF2A34;"></span> Kamera Saya
                     </div>
                 <% } %>
                 <% const orderedCams = hasOwnedCameras ? ownedCams.concat(umumCams) : cameras; %>
@@ -566,7 +587,7 @@
                                 </span>
                             </div>
                         </div>
-                        <div class="status-indicator hidden w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50 shrink-0"></div>
+                        <div class="status-indicator hidden w-2 h-2 rounded-full shrink-0" style="background:#FF2A34;box-shadow:0 0 8px rgba(255,42,52,.6);"></div>
                     </div>
                 </div>
                 <% }) %>
@@ -575,7 +596,7 @@
             <div class="p-3 border-t border-slate-800/50 bg-slate-900/50">
                 <div class="flex items-center justify-between text-[9px] text-slate-600">
                     <span class="flex items-center gap-1">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span class="w-1.5 h-1.5 rounded-full" style="background:#FF2A34;"></span>
                         <span id="sidebarOnlineCount">0</span> Online
                     </span>
                     <span class="flex items-center gap-1">
@@ -1008,7 +1029,7 @@
                                 </div>
                             </div>
                         </div>
-                        ${isSelected ? '<div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse ml-3"></div>' : ''}
+                        ${isSelected ? '<div class="w-2 h-2 rounded-full animate-pulse ml-3" style="background:#FF2A34;"></div>' : ''}
                     </div>
                 `;
             }).join('');
@@ -2093,7 +2114,8 @@
                 const innerDiv = badge.querySelector('div');
                 
                 if (status && status.online) {
-                    innerDiv.className = 'w-full h-full rounded-full bg-emerald-500';
+                    innerDiv.className = 'w-full h-full rounded-full';
+                    innerDiv.style.background = '#FF2A34';
                     innerDiv.style.animation = 'none';
                     badge.setAttribute('title', 'Online');
                     if (!countedCameras.has(cameraId)) {

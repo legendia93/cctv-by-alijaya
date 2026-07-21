@@ -1,0 +1,57 @@
+# ==========================================================================
+# CCTV Monitoring — compose PRODUKSI (server 10.10.17.6)
+#
+# Beda dengan docker-compose.allinone.yml (dev):
+#   - Pakai `image:` dari registry privat, BUKAN `build:` — server tidak build.
+#   - Rekaman diarahkan ke mount NFS TrueNAS (dataset SSN/VMs/cctv-data, quota 100 GiB).
+#
+# Tag image di-update otomatis oleh scripts/deploy.sh.
+# Siapkan server sekali dengan scripts/bootstrap-prod.sh.
+# ==========================================================================
+
+services:
+  app:
+    image: localhost:5000/cctv-allinone:v1.0.1
+    container_name: cctv-allinone
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Jakarta
+      - NODE_ENV=production
+    ports:
+      - "3003:3003"       # Web dashboard
+      - "8555:8555"       # RTSP
+      - "8856:8856"       # HLS
+      - "1936:1936"       # RTMP (YouTube ingest)
+      - "8890:8890/udp"   # WebRTC
+      # 9123 (API MediaMTX) sengaja TIDAK dipublish — internal saja.
+    volumes:
+      - ./mediamtx.single.yml:/app/mediamtx.yml
+      - ./data/config.json:/app/config.json
+      # SQLite WAL: file DB + sidecar -wal/-shm harus semuanya persist,
+      # kalau tidak tulisan hilang saat container di-recreate.
+      - ./data/cameras.db:/app/cameras.db
+      - ./data/cameras.db-wal:/app/cameras.db-wal
+      - ./data/cameras.db-shm:/app/cameras.db-shm
+      # Rekaman → dataset TrueNAS ber-quota 100 GiB (via NFS, lihat /etc/fstab).
+      # Sinkron dengan recording.storage_path di data/config.json.
+      - /mnt/cctv-data/recordings:/app/recordings
+      - ./data/uploads:/app/uploads
+      - ./data/bukti_tf:/app/bukti_tf
+      - ./data/baileys_auth_info:/app/baileys_auth_info
+      - ./data/subscriptions.json:/app/subscriptions.json
+      - ./data/vapid-keys.json:/app/vapid-keys.json
+    networks:
+      - ssn_gateway
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # Network bersama yang sudah ada di server (dipakai juga oleh AksFlow).
+  # `external: true` = compose memakai yang sudah ada, tidak membuat baru.
+  # WAJIB ada di sini: tanpa ini `--force-recreate` saat deploy akan
+  # melepas container dari network dan memutus akses via gateway.
+  ssn_gateway:
+    external: true

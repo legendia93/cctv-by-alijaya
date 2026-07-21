@@ -20,6 +20,9 @@ per topik di folder ini:
 | [06-temuan-lapangan.md](06-temuan-lapangan.md) | Temuan hardware nyata: NVR H.265 gagal decode, PTZ klaim palsu, disk E:\ |
 | [07-tema-nothing-os.md](07-tema-nothing-os.md) | Redesign UI tema "Nothing OS" (token layer, shell, auth) |
 | [08-ui-kamera-dvr-storage.md](08-ui-kamera-dvr-storage.md) | Poles UI Kamera/DVR (2 panel, modal bulk) + fix storage, rekaman, service worker |
+| [10-ui-tabel-permission-preview.md](10-ui-tabel-permission-preview.md) | Tabel admin, Permission Manager jadi tabel, preview live, matriks baca DB |
+| [09-style-table.md](09-style-table.md) | **Referensi styling tabel admin** — tabel transparan + garis tipis, toggle ON/OFF berwarna, section collapse |
+| [11-deploy-produksi.md](11-deploy-produksi.md) | **Cara deploy ke prod** — topologi TrueNAS/VM, storage NFS ber-quota, bootstrap + deploy.sh |
 
 Dokumentasi utama (bukan konteks sesi) ada di `docs/01..08-*.md`.
 
@@ -78,6 +81,25 @@ e:\Project\cctv\
   autofill kredensial, service worker cache CSS, dan **angka storage dashboard ≠ menu
   Storage** (`df /` vs disk rekaman). ⚠️ Terungkap cacat auto-cleanup — sudah diberi
   pengaman. Detail: [08-ui-kamera-dvr-storage.md](08-ui-kamera-dvr-storage.md).
+- ✅ **Tabel admin, Permission Manager & preview live** (sesi 2026-07-21): ditetapkan
+  **pola tabel admin** (transparan + garis tipis, lihat [09-style-table.md](09-style-table.md))
+  dan diterapkan ke Daftar Kamera, Permission, dan matriks Pelanggan. Permission Manager
+  dirombak dari tab per-level jadi **satu tabel** (baris=fitur, kolom=level) dengan toggle
+  **OFF merah / ON hijau** + section collapse. **Preview live** kamera via klik badge
+  status (HLS + fallback, embed via iframe). Daftar Kamera jadi **full-width** — ONVIF Scan
+  & Generator URL dipindah ke modal. ⚠️ Ditemukan & diperbaiki **cacat data**: matriks
+  permission di menu Pelanggan hardcode di view, tidak membaca DB — sekarang fetch
+  `/api/permissions/all`. Detail:
+  [10-ui-tabel-permission-preview.md](10-ui-tabel-permission-preview.md).
+- ✅ **Jalur deploy produksi disiapkan** (sesi 2026-07-21): target = **VM Docker
+  `10.10.17.6` yang berjalan di dalam TrueNAS `10.10.17.4`** (satu mesin, bukan dua).
+  Pola AksFlow: build di laptop → push registry privat `:5000` → ssh → recreate.
+  Rekaman diarahkan ke dataset ZFS `SSN/VMs/cctv-data` **ber-quota 100 GiB** via NFS
+  (`/mnt/cctv-data`) — quota ZFS dipakai karena `max_storage_percent` aplikasi mengukur
+  SELURUH disk, tak bisa jadi pembatas kuota. Dibuat `docker-compose.prod.yml`,
+  `scripts/bootstrap-prod.sh` (sekali), `scripts/deploy.sh` (rutin), dan `app/version.js`
+  (versi tampil di sidebar admin + halaman live). ⚠️ Script **belum dijalankan
+  end-to-end**. Detail: [11-deploy-produksi.md](11-deploy-produksi.md).
 - 🟢 Stack DEV sedang **berjalan** saat sesi ditutup: `cctv-allinone` (healthy) di
   http://localhost:3003, 5 kamera terdaftar (semua `enable_recording=0` / live-only).
 

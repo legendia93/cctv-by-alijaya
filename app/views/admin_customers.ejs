@@ -24,280 +24,44 @@
 
     <!-- Collapsible Content -->
     <div id="permissionMatrix" class="px-6 pb-6 hidden">
-        <!-- Level Summary Cards - Collapsible -->
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-6" id="levelCards">
-            <%
-            // Only these levels are exposed in the simplified UI (admin + member + umum).
-            const VISIBLE_LEVELS = ['umum', 'member', 'admin'];
-            const levelMeta = [
-                { key: 'umum', label: 'UMUM', color: 'bg-gray-700 text-gray-300 border-gray-600/50', icon: '📹' },
-                { key: 'member', label: 'MEMBER', color: 'bg-blue-900/40 text-blue-400 border-blue-500/20', icon: '📹📼' },
-                { key: 'vip', label: 'VIP', color: 'bg-amber-900/40 text-amber-400 border-amber-500/20', icon: '📹📼📊' },
-                { key: 'vvip', label: 'VVIP', color: 'bg-amber-900/50 text-amber-300 border-amber-500/30', icon: '📹📼📊🏆' },
-                { key: 'pemerintahan', label: 'PEMERINTAHAN', color: 'bg-cyan-900/40 text-cyan-400 border-cyan-500/20', icon: '📹📼📊🏛️' },
-                { key: 'admin', label: 'ADMIN', color: 'bg-emerald-900/40 text-emerald-400 border-emerald-500/20', icon: '🔒🔑📹📼💰🤖' }
-            ];
-            %>
-            <% levelMeta.filter(function(m){ return VISIBLE_LEVELS.includes(m.key); }).forEach(function(meta) { %>
-            <div class="<%= meta.color %> rounded-xl border p-3 text-center cursor-pointer hover:scale-105 transition-transform" onclick="toggleLevelDetail('<%= meta.key %>')">
-                <div class="text-lg mb-1"><%= meta.icon %></div>
-                <div class="text-[9px] font-black uppercase tracking-widest"><%= meta.label %></div>
-            </div>
-            <% }); %>
+        <!-- Matriks perbandingan: baris = fitur, kolom = level.
+             Data diambil dari DB (/api/permissions/all) — sumber yang sama dengan
+             menu Permission, jadi tidak bisa lagi out-of-sync. -->
+        <div class="mb-3">
+            <h3 class="text-xs font-black text-gray-300 uppercase tracking-widest">Matriks Perbandingan Level</h3>
+            <p class="text-[10px] text-gray-400 mt-1">
+                Arahkan mouse ke ikon &#9432; pada nama level untuk melihat deskripsi aksesnya.
+                Nilai dibaca langsung dari pengaturan di menu <a href="<%= base_path %>/admin/permissions" class="underline hover:text-gray-200">Permission</a>.
+            </p>
         </div>
 
-        <!-- Level Detail Section - Collapsible per level -->
-        <div id="levelDetails" class="space-y-3 mb-6">
-            <% 
-            const levels = [
-                { 
-                    key: 'umum', label: 'UMUM', badge: 'bg-gray-700 text-gray-400 border-gray-600/30',
-                    desc: 'Akses dasar - hanya bisa melihat stream kamera umum, melaporkan kejadian & info cuaca',
-                    perms: [
-                        { name: 'Preview Kamera', ok: true },
-                        { name: 'Playback Rekaman', ok: false },
-                        { name: 'Embed Kamera', ok: true },
-                        { name: 'Peta Kamera', ok: true },
-                        { name: 'Arsip Rekaman', ok: false },
-                        { name: 'Laporan Kejadian', ok: true },
-                        { name: 'Buat Laporan', ok: true },
-                        { name: 'Info Cuaca', ok: true },
-                        { name: 'Cuaca Marine', ok: true },
-                        { name: 'Akun Saya', ok: true },
-                        { name: 'Billing & Paket', ok: false },
-                        { name: 'Notifikasi Push', ok: false },
-                        { name: 'Admin Panel', ok: false }
-                    ]
-                },
-                { 
-                    key: 'member', label: 'MEMBER', badge: 'bg-blue-900/40 text-blue-400 border-blue-500/20',
-                    desc: 'Akses menengah - stream kamera umum + member, playback rekaman, laporan & cuaca',
-                    perms: [
-                        { name: 'Preview Kamera', ok: true },
-                        { name: 'Playback Rekaman', ok: true },
-                        { name: 'Embed Kamera', ok: true },
-                        { name: 'Peta Kamera', ok: true },
-                        { name: 'Arsip Rekaman', ok: false },
-                        { name: 'Laporan Kejadian', ok: true },
-                        { name: 'Buat Laporan', ok: true },
-                        { name: 'Info Cuaca', ok: true },
-                        { name: 'Cuaca Marine', ok: true },
-                        { name: 'Akun Saya', ok: true },
-                        { name: 'Billing & Paket', ok: true },
-                        { name: 'Notifikasi Push', ok: false },
-                        { name: 'Admin Panel', ok: false }
-                    ]
-                },
-                { 
-                    key: 'vip', label: 'VIP', badge: 'bg-amber-900/40 text-amber-400 border-amber-500/20',
-                    desc: 'Akses tinggi - semua kamera kecuali VVIP, playback penuh, laporan & billing',
-                    perms: [
-                        { name: 'Preview Kamera', ok: true },
-                        { name: 'Playback Rekaman', ok: true },
-                        { name: 'Embed Kamera', ok: true },
-                        { name: 'Peta Kamera', ok: true },
-                        { name: 'Arsip Rekaman', ok: false },
-                        { name: 'Laporan Kejadian', ok: true },
-                        { name: 'Buat Laporan', ok: true },
-                        { name: 'Info Cuaca', ok: true },
-                        { name: 'Cuaca Marine', ok: true },
-                        { name: 'Akun Saya', ok: true },
-                        { name: 'Billing & Paket', ok: true },
-                        { name: 'Notifikasi Push', ok: false },
-                        { name: 'Admin Panel', ok: false }
-                    ]
-                },
-                { 
-                    key: 'vvip', label: 'VVIP', badge: 'bg-amber-900/50 text-amber-300 border-amber-500/30',
-                    desc: 'Akses premium - semua level termasuk VVIP eksklusif milik sendiri, prioritas tertinggi',
-                    perms: [
-                        { name: 'Preview Kamera', ok: true },
-                        { name: 'Playback Rekaman', ok: true },
-                        { name: 'Embed Kamera', ok: true },
-                        { name: 'Peta Kamera', ok: true },
-                        { name: 'Arsip Rekaman', ok: false },
-                        { name: 'Laporan Kejadian', ok: true },
-                        { name: 'Buat Laporan', ok: true },
-                        { name: 'Info Cuaca', ok: true },
-                        { name: 'Cuaca Marine', ok: true },
-                        { name: 'Akun Saya', ok: true },
-                        { name: 'Billing & Paket', ok: true },
-                        { name: 'Notifikasi Push', ok: false },
-                        { name: 'Admin Panel', ok: false }
-                    ]
-                },
-                { 
-                    key: 'pemerintahan', label: 'PEMERINTAHAN', badge: 'bg-cyan-900/40 text-cyan-400 border-cyan-500/20',
-                    desc: 'Akses khusus instansi - kamera umum + member + vip + kamera khusus pemerintahan',
-                    perms: [
-                        { name: 'Preview Kamera', ok: true },
-                        { name: 'Playback Rekaman', ok: true },
-                        { name: 'Embed Kamera', ok: true },
-                        { name: 'Peta Kamera', ok: true },
-                        { name: 'Arsip Rekaman', ok: false },
-                        { name: 'Laporan Kejadian', ok: true },
-                        { name: 'Buat Laporan', ok: true },
-                        { name: 'Info Cuaca', ok: true },
-                        { name: 'Cuaca Marine', ok: true },
-                        { name: 'Akun Saya', ok: true },
-                        { name: 'Billing & Paket', ok: false },
-                        { name: 'Notifikasi Push', ok: false },
-                        { name: 'Admin Panel', ok: false }
-                    ]
-                },
-                { 
-                    key: 'admin', label: 'ADMIN', badge: 'bg-emerald-900/40 text-emerald-400 border-emerald-500/20',
-                    desc: 'Full control - semua fitur dan manajemen sistem, kamera, pengguna, billing, AI, dll',
-                    perms: [
-                        { name: 'Preview Kamera', ok: true },
-                        { name: 'Playback Rekaman', ok: true },
-                        { name: 'Embed Kamera', ok: true },
-                        { name: 'Peta Kamera', ok: true },
-                        { name: 'Arsip Rekaman', ok: true },
-                        { name: 'Laporan Kejadian', ok: true },
-                        { name: 'Buat Laporan', ok: true },
-                        { name: 'Info Cuaca', ok: true },
-                        { name: 'Cuaca Marine', ok: true },
-                        { name: 'Akun Saya', ok: true },
-                        { name: 'Billing & Paket', ok: true },
-                        { name: 'Notifikasi Push', ok: true },
-                        { name: 'Admin Panel', ok: true }
-                    ]
-                }
-            ];
-            %>
-            <% levels.filter(function(l){ return VISIBLE_LEVELS.includes(l.key); }).forEach(function(lvl) { %>
-            <div id="detail-<%= lvl.key %>" class="hidden bg-gray-900/50 rounded-xl border border-gray-700 overflow-hidden">
-                <div class="p-4 flex items-center justify-between border-b border-gray-700/50">
-                    <div class="flex items-center gap-3">
-                        <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest <%= lvl.badge %>"><%= lvl.label %></span>
-                        <span class="text-[10px] text-gray-500"><%= lvl.desc %></span>
-                    </div>
-                    <button onclick="event.stopPropagation(); toggleLevelDetail('<%= lvl.key %>')" class="text-gray-500 hover:text-white">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                </div>
-                <div class="p-4">
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        <% lvl.perms.forEach(function(p) { %>
-                        <div class="flex items-center gap-2 px-3 py-2 rounded-lg <%= p.ok ? 'bg-emerald-900/10 text-emerald-400' : 'bg-gray-800/50 text-gray-600' %>">
-                            <span class="text-xs"><%= p.ok ? '✅' : '❌' %></span>
-                            <span class="text-[10px] font-medium"><%= p.name %></span>
-                        </div>
-                        <% }); %>
-                    </div>
-                </div>
-            </div>
-            <% }); %>
-        </div>
+        <!-- Pola tabel: transparan + garis tipis (docs/konteks/style-table.md) -->
+        <style>
+            .mtx-table td, .mtx-table th { background: transparent; }
+            .mtx-table tbody tr.mtx-item td { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+            .mtx-table tbody tr.mtx-item:hover td { background: rgba(255, 255, 255, 0.035); }
+            .mtx-table thead th { border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+            .mtx-group td {
+                background: rgba(255, 255, 255, 0.025);
+                border-top: 1px solid rgba(255, 255, 255, 0.07);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            }
+            /* Tooltip deskripsi level di header matriks. */
+            .lvl-tip-box {
+                position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+                width: 220px; padding: 8px 10px; z-index: 30;
+                background: #0b0b0d; border: 1px solid #374151; border-radius: 10px;
+                color: #d1d5db; font-size: 10px; font-weight: 500; line-height: 1.5;
+                text-transform: none; letter-spacing: normal; text-align: left;
+                opacity: 0; visibility: hidden; transition: opacity .15s ease;
+                box-shadow: 0 8px 24px rgba(0,0,0,.5); white-space: normal; pointer-events: none;
+            }
+            .lvl-tip:hover .lvl-tip-box { opacity: 1; visibility: visible; }
+            @media (min-width: 640px) { #matrixTable { overflow: visible; } }
+        </style>
 
-        <!-- Matrix Table - Collapsible -->
-        <div class="mb-4">
-            <div class="flex items-center justify-between cursor-pointer" onclick="toggleCollapse('matrixTable')">
-                <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest">📊 Matriks Perbandingan Level</h3>
-                <button class="text-gray-500 hover:text-white">
-                    <svg class="w-4 h-4 transition-transform duration-300" id="matrixTableArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
-            </div>
-        </div>
-        <div id="matrixTable" class="hidden overflow-x-auto">
-            <table class="w-full text-xs">
-                <thead>
-                    <tr class="text-[9px] uppercase tracking-widest font-black text-gray-500 border-b border-gray-700">
-                        <th class="p-3 text-left">Level</th>
-                        <th class="p-3 text-center">Stream Kamera</th>
-                        <th class="p-3 text-center">Playback</th>
-                        <th class="p-3 text-center">Embed</th>
-                        <th class="p-3 text-center">Peta</th>
-                        <th class="p-3 text-center">Laporan</th>
-                        <th class="p-3 text-center">Cuaca</th>
-                        <th class="p-3 text-center">Akun</th>
-                        <th class="p-3 text-center">Billing</th>
-                        <th class="p-3 text-center">Admin</th>
-                        <th class="p-3 text-left min-w-[130px]">Keterangan</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-700/50">
-                    <tr class="hover:bg-gray-700/20">
-                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-gray-700 text-gray-400">UMUM</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-gray-600">❌</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-gray-600">❌</span></td>
-                        <td class="p-3 text-center"><span class="text-gray-600">❌</span></td>
-                        <td class="p-3 text-gray-400 text-[9px]">Kamera umum, lapor, cuaca</td>
-                    </tr>
-                    <tr class="hover:bg-gray-700/20">
-                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-blue-900/40 text-blue-400 border-blue-500/20">MEMBER</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-gray-600">❌</span></td>
-                        <td class="p-3 text-gray-400 text-[9px]">+ Playback, billing</td>
-                    </tr>
-                    <tr class="hover:bg-gray-700/20">
-                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-amber-900/40 text-amber-400 border-amber-500/20">VIP</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-gray-600">❌</span></td>
-                        <td class="p-3 text-gray-400 text-[9px]">+ Kamera VIP eksklusif</td>
-                    </tr>
-                    <tr class="hover:bg-gray-700/20">
-                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-amber-900/50 text-amber-300 border-amber-500/30">VVIP</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-gray-600">❌</span></td>
-                        <td class="p-3 text-gray-400 text-[9px]">+ Kamera VVIP pribadi</td>
-                    </tr>
-                    <tr class="hover:bg-gray-700/20">
-                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-cyan-900/40 text-cyan-400 border-cyan-500/20">PEMERINTAHAN</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-gray-600">❌</span></td>
-                        <td class="p-3 text-center"><span class="text-gray-600">❌</span></td>
-                        <td class="p-3 text-gray-400 text-[9px]">+ Kamera khusus pemda</td>
-                    </tr>
-                    <tr class="hover:bg-gray-700/20 bg-emerald-900/10">
-                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-emerald-900/40 text-emerald-400 border-emerald-500/20">ADMIN</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅ ALL</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅</span></td>
-                        <td class="p-3 text-center"><span class="text-emerald-400">✅ FULL</span></td>
-                        <td class="p-3 text-gray-400 text-[9px]">Semua fitur & manajemen</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div id="matrixTable" class="overflow-x-auto">
+            <div class="text-center text-gray-400 text-xs py-6">Memuat data permission...</div>
         </div>
 
         <!-- Feature Details per Level - Collapsible -->
@@ -317,10 +81,7 @@
                 </div>
                 <ul class="text-[10px] space-y-1.5 text-gray-400">
                     <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> UMUM: Hanya kamera level umum</li>
-                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> MEMBER: Kamera umum + member</li>
-                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> VIP: Semua kamera kecuali VVIP</li>
-                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> VVIP: Semua kamera termasuk VVIP sendiri</li>
-                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> PEM: Kamera umum + member + vip + pem</li>
+                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> MEMBER: Kamera umum + kamera miliknya sendiri</li>
                     <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> ADMIN: Semua kamera tanpa batasan</li>
                 </ul>
             </div>
@@ -332,38 +93,39 @@
                 <ul class="text-[10px] space-y-1.5 text-gray-400">
                     <li class="flex items-center gap-1.5"><span class="text-rose-500">✗</span> UMUM: Tidak bisa akses rekaman</li>
                     <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> MEMBER: Rekaman sesuai level kamera</li>
-                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> VIP/VVIP/PEM: Akses penuh rekaman</li>
                     <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> ADMIN: Semua rekaman, bisa hapus</li>
                 </ul>
             </div>
             <div class="bg-gray-900/50 rounded-xl border border-gray-700 p-4">
                 <div class="flex items-center gap-2 mb-3">
                     <span class="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 text-xs font-black">F3</span>
-                    <h4 class="text-[10px] font-black text-white uppercase tracking-widest">Fitur Lainnya</h4>
+                    <h4 class="text-[10px] font-black text-white uppercase tracking-widest">Catatan</h4>
                 </div>
                 <ul class="text-[10px] space-y-1.5 text-gray-400">
-                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> Embed kamera: Semua level</li>
-                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> Peta kamera: Semua level</li>
-                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> Laporan kejadian: Semua level</li>
-                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> Cuaca/Marine: Semua level</li>
-                    <li class="flex items-center gap-1.5"><span class="text-rose-500">✗</span> Admin panel: Hanya ADMIN</li>
-                    <li class="flex items-center gap-1.5"><span class="text-rose-500">✗</span> AI Analytics: Hanya ADMIN</li>
-                    <li class="flex items-center gap-1.5"><span class="text-rose-500">✗</span> Billing/Notif: UMUM & PEM tidak</li>
+                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> Kamera <strong class="text-gray-200">umum</strong> = komunal, terlihat semua level</li>
+                    <li class="flex items-center gap-1.5"><span class="text-emerald-500">✓</span> Kamera non-umum = milik <strong class="text-gray-200">owner</strong>-nya saja</li>
+                    <li class="flex items-center gap-1.5"><span class="text-amber-500">!</span> Hak akses per menu diatur di <strong class="text-gray-200">Permission</strong></li>
                 </ul>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Add/Edit Customer Form -->
-<div class="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 p-6 mb-8 transform transition hover:scale-[1.005] duration-300">
-    <h2 class="text-xl font-bold mb-6 text-blue-400 border-b border-gray-700 pb-2 flex items-center gap-2">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-        </svg>
-        <span id="formTitle">Tambah Pelanggan Baru</span>
+<!-- Add/Edit Customer Modal (dibuka via tombol "Tambah Pelanggan") -->
+<div id="customerModalBackdrop" class="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm hidden items-start justify-center overflow-y-auto p-4 md:p-8" onclick="if(event.target===this) closeCustomerForm()">
+<div class="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 p-6 w-full max-w-4xl my-auto">
+    <h2 class="text-xl font-bold mb-6 text-blue-400 border-b border-gray-700 pb-2 flex items-center justify-between gap-2">
+        <span class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            <span id="formTitle">Tambah Pelanggan Baru</span>
+        </span>
+        <button type="button" onclick="closeCustomerForm()" class="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-gray-700/50 transition" title="Tutup (Esc)">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
     </h2>
-    
+
     <form id="customerForm" action="<%= base_path %>/admin/users/add" method="POST" class="space-y-6">
         <input type="hidden" name="id" id="edit_user_id">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -415,19 +177,24 @@
         </div>
 
         <div class="flex justify-end gap-3">
-            <button type="button" id="cancelBtn" class="hidden bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-8 rounded-2xl transition uppercase text-xs tracking-widest">Batal</button>
-            <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-2xl shadow-xl shadow-blue-900/20 transition transform active:scale-95 uppercase text-xs tracking-widest">
+            <button type="button" id="cancelBtn" onclick="closeCustomerForm()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl transition uppercase text-xs tracking-widest">Batal</button>
+            <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl shadow-xl shadow-blue-900/20 transition transform active:scale-95 uppercase text-xs tracking-widest">
                 Simpan Pelanggan
             </button>
         </div>
     </form>
+</div>
 </div>
 
 <!-- Customer List -->
 <div class="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 overflow-hidden">
     <div class="p-6 border-b border-gray-700 flex justify-between items-center">
         <h2 class="text-lg font-bold text-white uppercase tracking-wider">Daftar Pelanggan Terdaftar</h2>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3">
+            <button type="button" onclick="openCustomerForm()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-xl transition transform active:scale-95 flex items-center gap-2 whitespace-nowrap shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span class="text-[10px] uppercase tracking-widest">Tambah Pelanggan</span>
+            </button>
             <div class="relative">
                 <input type="text" id="userSearch" placeholder="Cari pelanggan..." class="bg-gray-900 border border-gray-700 rounded-xl px-4 py-2 text-xs text-white focus:border-blue-500 transition-all pl-10">
                 <svg class="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -538,13 +305,115 @@
         if (!el) return;
         el.classList.toggle('hidden');
         if (arrow) arrow.style.transform = el.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+
+        // Matriks di-load saat pertama kali panel dibuka (hemat 1 request).
+        if (id === 'permissionMatrix' && !el.classList.contains('hidden') && !matrixLoaded) {
+            loadMatrix();
+        }
     }
 
-    // Toggle Level Detail
-    function toggleLevelDetail(key) {
-        const el = document.getElementById('detail-' + key);
-        if (!el) return;
-        el.classList.toggle('hidden');
+    /* ===== Matriks permission (dibaca dari DB, bukan hardcode) ===== */
+    let matrixLoaded = false;
+
+    // Level yang ditampilkan sebagai kolom, urut dari akses terendah.
+    const MTX_LEVELS = ['umum', 'member', 'admin'];
+    const mtxBadge = {
+        umum: 'bg-gray-700 text-gray-300 border-gray-600/50',
+        member: 'bg-blue-900/40 text-blue-400 border-blue-500/30',
+        admin: 'bg-emerald-900/40 text-emerald-400 border-emerald-500/30'
+    };
+    const mtxDesc = {
+        umum: 'Akses dasar — hanya bisa melihat stream kamera umum, melaporkan kejadian & info cuaca.',
+        member: 'Akses menengah — kamera umum + kamera miliknya sendiri, playback rekaman, laporan & cuaca.',
+        admin: 'Full control — semua fitur dan manajemen sistem, kamera, pengguna, billing, dll.'
+    };
+
+    // Pengelompokan & label disamakan dengan menu Permission.
+    // Grup "Admin Panel" sengaja TIDAK ditampilkan: seluruh menunya memang khusus
+    // admin, jadi barisnya selalu ✗ ✗ ✓ dan tak menambah informasi. Untuk mengaturnya
+    // gunakan menu Permission.
+    const mtxGroups = {
+        'Streaming': ['camera_preview','camera_playback','camera_embed','camera_map'],
+        'Data & Informasi': ['recordings','incident_reports','incident_create','weather_view','weather_marine'],
+        'Akun Pengguna': ['user_account','user_billing','push_notifications']
+    };
+    const mtxLabels = {
+        camera_preview: 'Preview Kamera', camera_playback: 'Playback Rekaman',
+        camera_embed: 'Embed Kamera', camera_map: 'Peta Kamera',
+        recordings: 'Arsip Rekaman', incident_reports: 'Laporan Kejadian',
+        incident_create: 'Buat Laporan', weather_view: 'Info Cuaca',
+        weather_marine: 'Cuaca Marine', user_account: 'Akun Saya',
+        user_billing: 'Billing & Paket', push_notifications: 'Notifikasi Push'
+    };
+
+    function mtxEsc(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function loadMatrix() {
+        const box = document.getElementById('matrixTable');
+        if (!box) return;
+        try {
+            const res = await fetch('<%= base_path %>/api/permissions/all');
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || 'Gagal memuat');
+            matrixLoaded = true;
+            renderMatrix(data.permissions || {});
+        } catch (e) {
+            box.innerHTML = '<div class="text-center text-rose-400 text-xs py-6">Gagal memuat data permission: ' + mtxEsc(e.message) + '</div>';
+        }
+    }
+
+    function renderMatrix(perms) {
+        let html = '<table class="mtx-table w-full text-xs min-w-[420px]">';
+
+        html += '<thead><tr>';
+        html += '<th class="px-3 py-2 text-left text-[9px] uppercase tracking-widest font-black text-gray-300">Fitur</th>';
+        MTX_LEVELS.forEach(function (lv) {
+            html += '<th class="px-3 py-2 text-center">';
+            html += '<span class="lvl-tip relative inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border cursor-help ' + mtxBadge[lv] + '">';
+            html += lv + '<span class="opacity-60">&#9432;</span>';
+            html += '<span class="lvl-tip-box">' + mtxEsc(mtxDesc[lv] || '') + '</span>';
+            html += '</span></th>';
+        });
+        html += '</tr></thead><tbody>';
+
+        Object.keys(mtxGroups).forEach(function (group) {
+            html += '<tr class="mtx-group"><td class="px-3 py-2">';
+            html += '<span class="text-[9px] font-black text-gray-100 uppercase tracking-widest">' + mtxEsc(group) + '</span>';
+            html += '</td>';
+            MTX_LEVELS.forEach(function (lv) {
+                const p = perms[lv] || {};
+                const ids = mtxGroups[group];
+                const on = ids.filter(function (id) { return p[id] === true; }).length;
+                html += '<td class="px-3 py-2 text-center text-[9px] text-gray-300 tabular-nums">' + on + '/' + ids.length + '</td>';
+            });
+            html += '</tr>';
+
+            mtxGroups[group].forEach(function (id) {
+                html += '<tr class="mtx-item">';
+                html += '<td class="px-3 py-2 text-gray-50">' + mtxEsc(mtxLabels[id] || id) + '</td>';
+                MTX_LEVELS.forEach(function (lv) {
+                    const ok = (perms[lv] || {})[id] === true;
+                    html += '<td class="px-3 py-2 text-center">';
+                    html += ok
+                        ? '<span class="text-emerald-400 text-sm font-bold" title="Bisa diakses">&#10003;</span>'
+                        : '<span class="text-rose-500/60 text-sm font-bold" title="Tidak bisa diakses">&#10007;</span>';
+                    html += '</td>';
+                });
+                html += '</tr>';
+            });
+        });
+
+        html += '</tbody></table>';
+
+        html += '<div class="flex flex-wrap items-center gap-4 mt-3 pt-3 text-[10px] text-gray-300" style="border-top:1px solid rgba(255,255,255,0.07);">';
+        html += '<span class="flex items-center gap-1.5"><span class="text-emerald-400 font-bold">&#10003;</span> Bisa diakses</span>';
+        html += '<span class="flex items-center gap-1.5"><span class="text-rose-500/60 font-bold">&#10007;</span> Tidak bisa diakses</span>';
+        html += '<span class="text-gray-500">Menu Admin Panel tidak ditampilkan &mdash; khusus level admin.</span>';
+        html += '</div>';
+
+        document.getElementById('matrixTable').innerHTML = html;
     }
 
     // Level descriptions for dropdown
@@ -582,7 +451,6 @@
         document.getElementById('formTitle').innerText = 'Edit Pelanggan: ' + (user.full_name || user.username);
         document.getElementById('submitBtn').innerText = 'Update Pelanggan';
         document.getElementById('customerForm').action = '<%= base_path %>/admin/users/edit';
-        document.getElementById('cancelBtn').classList.remove('hidden');
         document.getElementById('passHint').classList.remove('hidden');
         document.getElementById('edit_password').required = false;
         
@@ -591,21 +459,42 @@
         document.getElementById('levelDescription').innerText = desc;
         document.getElementById('levelDescription').className = 'text-[9px] text-cyan-400/70 mt-1';
         
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        openCustomerModal();
     }
 
-    document.getElementById('cancelBtn').onclick = () => {
+    /* ===== Modal tambah/edit pelanggan ===== */
+    function openCustomerModal() {
+        const b = document.getElementById('customerModalBackdrop');
+        b.classList.remove('hidden'); b.classList.add('flex');
+    }
+
+    // Tombol "Tambah Pelanggan": reset form ke mode tambah, lalu buka modal.
+    function openCustomerForm() {
+        resetCustomerForm();
+        openCustomerModal();
+    }
+
+    function closeCustomerForm() {
+        const b = document.getElementById('customerModalBackdrop');
+        b.classList.add('hidden'); b.classList.remove('flex');
+        resetCustomerForm();
+    }
+
+    function resetCustomerForm() {
         document.getElementById('customerForm').reset();
         document.getElementById('edit_user_id').value = '';
         document.getElementById('formTitle').innerText = 'Tambah Pelanggan Baru';
         document.getElementById('submitBtn').innerText = 'Simpan Pelanggan';
         document.getElementById('customerForm').action = '<%= base_path %>/admin/users/add';
-        document.getElementById('cancelBtn').classList.add('hidden');
         document.getElementById('passHint').classList.add('hidden');
         document.getElementById('edit_password').required = true;
         document.getElementById('levelDescription').innerText = 'Tips: Pilih level untuk melihat deskripsi akses';
         document.getElementById('levelDescription').className = 'text-[9px] text-gray-500 mt-1';
-    };
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !document.getElementById('customerModalBackdrop').classList.contains('hidden')) closeCustomerForm();
+    });
 
     async function deleteUser(id) {
         showModal("Hapus pelanggan ini secara permanen?", "confirm", async () => {
