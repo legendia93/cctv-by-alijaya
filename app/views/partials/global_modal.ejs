@@ -1,0 +1,90 @@
+<!-- Global Notification Modal — Nothing OS flat -->
+<div id="globalModal" class="fixed inset-0 z-[500] hidden flex items-center justify-center p-4">
+    <div class="absolute inset-0 transition-opacity duration-300" style="background:rgba(10,10,10,.45);" onclick="hideModal()"></div>
+
+    <div class="n-card w-full max-w-sm p-8 transform transition-all scale-95 opacity-0 relative z-10" id="globalModalContent" style="border-radius:var(--n-radius-lg);">
+        <div id="modalIcon" class="w-14 h-14 flex items-center justify-center mx-auto mb-6" style="border:1px solid var(--n-line);border-radius:var(--n-radius-sm);">
+            <svg class="w-7 h-7" id="modalIconSvg" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"></svg>
+        </div>
+
+        <h3 id="modalTitle" class="n-heading text-lg text-center mb-2"></h3>
+        <p id="modalMessage" class="text-sm text-center mb-8 leading-relaxed" style="color:var(--n-ink-soft);"></p>
+
+        <div class="flex flex-col gap-3">
+            <button id="modalOkBtn" class="n-btn n-btn-accent w-full">Lanjutkan</button>
+            <button id="modalCancelBtn" onclick="hideModal()" class="n-btn n-btn-ghost w-full hidden">Batal</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let modalCallback = null;
+
+    function showModal(message, type = 'success', callback = null) {
+        const modal = document.getElementById('globalModal');
+        const content = document.getElementById('globalModalContent');
+        const title = document.getElementById('modalTitle');
+        const msg = document.getElementById('modalMessage');
+        const iconBg = document.getElementById('modalIcon');
+        const iconSvg = document.getElementById('modalIconSvg');
+        const okBtn = document.getElementById('modalOkBtn');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+
+        msg.innerText = message;
+        modalCallback = callback;
+
+        cancelBtn.classList.add('hidden');
+        okBtn.innerText = 'Mengerti';
+        okBtn.className = 'n-btn n-btn-accent w-full';
+        iconBg.style.borderColor = 'var(--n-line)';
+        iconSvg.style.color = 'var(--n-ink)';
+
+        if (type === 'error') {
+            title.innerText = 'Peringatan';
+            iconBg.style.borderColor = 'var(--n-accent)';
+            iconSvg.style.color = 'var(--n-accent)';
+            iconSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>';
+        } else if (type === 'confirm') {
+            title.innerText = 'Konfirmasi';
+            iconSvg.style.color = 'var(--n-ink)';
+            iconSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>';
+            okBtn.innerText = 'Ya, Lanjutkan';
+            cancelBtn.classList.remove('hidden');
+        } else {
+            title.innerText = 'Berhasil';
+            iconSvg.style.color = 'var(--n-ink)';
+            iconSvg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>';
+        }
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function hideModal(confirmed = false) {
+        const modal = document.getElementById('globalModal');
+        const content = document.getElementById('globalModalContent');
+        content.classList.add('scale-95', 'opacity-0');
+        content.classList.remove('scale-100', 'opacity-100');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            if (confirmed && modalCallback) {
+                const cb = modalCallback;
+                modalCallback = null;
+                cb();
+            }
+        }, 200);
+    }
+
+    document.getElementById('modalOkBtn').onclick = () => hideModal(true);
+
+    // Override global alert and confirm
+    window.alert = function(message) { showModal(message, 'info'); };
+    window.confirm = function(message) {
+        console.warn('window.confirm is redirected to custom modal. Use showModal with callback for logic.');
+        showModal(message, 'confirm');
+        return false;
+    };
+</script>

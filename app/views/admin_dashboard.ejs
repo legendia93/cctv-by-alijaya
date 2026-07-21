@@ -1,0 +1,326 @@
+<%- include('partials/admin_header', { title: 'Dashboard' }) %>
+<%- include('partials/admin_sidebar', { page: 'dashboard' }) %>
+
+<!-- Page header -->
+<div class="flex items-end justify-between mb-6 n-fade-in">
+    <div>
+        <div class="n-label mb-1">Ringkasan Sistem</div>
+        <h1 class="n-heading text-2xl">Dashboard</h1>
+    </div>
+</div>
+
+<!-- Server Status Banner -->
+<div id="serverBanner" class="n-card-black n-card p-5 mb-6 flex flex-wrap items-center justify-between gap-4 n-fade-in" style="border-radius:var(--n-radius);">
+    <div class="flex items-center gap-4">
+        <div id="serverDot" class="n-dot n-dot-off"></div>
+        <div>
+            <div id="serverName" class="text-sm font-semibold" style="color:var(--n-bg);">CCTV Server</div>
+            <div id="serverUptime" class="n-label" style="letter-spacing:.1em;">Checking...</div>
+        </div>
+    </div>
+    <div class="flex items-center gap-5 text-right">
+        <div>
+            <div id="serverCpuLoad" class="n-num text-xl" style="color:var(--n-bg);">--</div>
+            <div class="n-label mt-1">CPU</div>
+        </div>
+        <div class="w-px h-8" style="background:var(--n-bg);opacity:.15;"></div>
+        <div>
+            <div id="serverMemUsage" class="n-num text-xl" style="color:var(--n-bg);">--</div>
+            <div class="n-label mt-1">Memory</div>
+        </div>
+        <div class="w-px h-8" style="background:var(--n-bg);opacity:.15;"></div>
+        <div>
+            <div id="serverDiskUsage" class="n-num text-xl" style="color:var(--n-bg);">--</div>
+            <div class="n-label mt-1">Disk</div>
+        </div>
+        <div class="w-px h-8" style="background:var(--n-bg);opacity:.15;"></div>
+        <div>
+            <div id="serverArch" class="n-num text-xl" style="color:var(--n-bg);">--</div>
+            <div class="n-label mt-1">Arch</div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards (bento) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="n-card p-6 flex flex-col justify-between min-h-[150px]">
+        <div class="flex items-start justify-between">
+            <svg class="w-6 h-6" style="color:var(--n-ink-soft);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            <span class="n-pill">Online</span>
+        </div>
+        <div>
+            <div class="n-label mb-2">Kamera Terdaftar</div>
+            <p class="n-num text-4xl"><%= cameras.length %> <span class="text-sm n-label" style="letter-spacing:.1em;">Unit</span></p>
+        </div>
+    </div>
+
+    <div class="n-card p-6 flex flex-col justify-between min-h-[150px]">
+        <div class="flex items-start justify-between">
+            <svg class="w-6 h-6" style="color:var(--n-ink-soft);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <span class="n-pill">Aktif</span>
+        </div>
+        <div>
+            <div class="n-label mb-2">Total Pelanggan</div>
+            <p class="n-num text-4xl"><%= users.length %> <span class="text-sm n-label" style="letter-spacing:.1em;">User</span></p>
+        </div>
+    </div>
+
+    <div class="n-card p-6 flex flex-col justify-between min-h-[150px]">
+        <div class="flex items-start justify-between">
+            <svg class="w-6 h-6" style="color:var(--n-ink-soft);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <span id="disk-percent-badge" class="n-pill">--</span>
+        </div>
+        <div>
+            <div class="n-label mb-2">Penyimpanan</div>
+            <p id="disk-text" class="n-num text-4xl">-- <span class="text-sm n-label" style="letter-spacing:.1em;">/ -- GB</span></p>
+        </div>
+    </div>
+
+    <div class="n-card p-6 flex flex-col justify-between min-h-[150px]">
+        <div class="flex items-start justify-between">
+            <svg class="w-6 h-6" style="color:var(--n-ink-soft);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span id="ai-status-badge" class="n-pill">Checking...</span>
+        </div>
+        <div>
+            <div class="n-label mb-2">AI Engine</div>
+            <p id="ai-status-text" class="n-num text-4xl">-- <span class="text-sm n-label" style="letter-spacing:.1em;">Kamera</span></p>
+        </div>
+    </div>
+</div>
+
+<!-- System Monitor Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- CPU & Memory Cards -->
+    <div class="n-card p-6">
+        <h2 class="n-label mb-6">CPU · Memory · Disk</h2>
+        <div class="space-y-6">
+            <!-- CPU -->
+            <div>
+                <div class="flex justify-between items-baseline mb-2">
+                    <span class="n-label">CPU Load</span>
+                    <span id="cpu-percent" class="n-num text-lg">0%</span>
+                </div>
+                <div class="h-1.5 rounded-full overflow-hidden" style="background:var(--n-surface-2);">
+                    <div id="cpu-bar" class="h-full rounded-full transition-all duration-1000" style="width:0%;background:var(--n-ink);"></div>
+                </div>
+                <div class="flex justify-between mt-1.5" style="font-family:var(--font-mono);font-size:9px;color:var(--n-ink-faint);">
+                    <span id="cpu-load-1">0.00</span><span id="cpu-load-5">0.00</span><span id="cpu-load-15">0.00</span>
+                </div>
+            </div>
+            <!-- Memory -->
+            <div>
+                <div class="flex justify-between items-baseline mb-2">
+                    <span class="n-label">Memory</span>
+                    <span id="mem-percent" class="n-num text-lg">0%</span>
+                </div>
+                <div class="h-1.5 rounded-full overflow-hidden" style="background:var(--n-surface-2);">
+                    <div id="mem-bar" class="h-full rounded-full transition-all duration-1000" style="width:0%;background:var(--n-ink);"></div>
+                </div>
+                <div class="flex justify-between mt-1.5" style="font-family:var(--font-mono);font-size:9px;color:var(--n-ink-faint);">
+                    <span id="mem-used">0 GB</span><span id="mem-free">0 GB</span><span id="mem-total">0 GB</span>
+                </div>
+            </div>
+            <!-- Disk -->
+            <div>
+                <div class="flex justify-between items-baseline mb-2">
+                    <span class="n-label">Disk Storage</span>
+                    <span id="disk-percent" class="n-num text-lg">0%</span>
+                </div>
+                <div class="h-1.5 rounded-full overflow-hidden" style="background:var(--n-surface-2);">
+                    <div id="disk-bar" class="h-full rounded-full transition-all duration-1000" style="width:0%;background:var(--n-ink);"></div>
+                </div>
+                <div class="flex justify-between mt-1.5" style="font-family:var(--font-mono);font-size:9px;color:var(--n-ink-faint);">
+                    <span id="disk-used">0 GB</span><span id="disk-free">0 GB</span><span id="disk-total">0 GB</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Info Card -->
+    <div class="n-card p-6">
+        <h2 class="n-label mb-6">System Information</h2>
+        <div class="divide-y" style="border-color:var(--n-line);">
+            <% const sysRows = [
+                ['sys-hostname','Hostname'],['sys-platform','Platform'],['sys-arch','Architecture'],
+                ['sys-cpu','Processor'],['sys-cores','CPU Cores'],['sys-temp','CPU Temperature'],
+                ['sys-uptime','Server Uptime'],['sys-node','Node.js Version'],['sys-version','App Version'],['sys-ai','AI Engine']
+            ]; %>
+            <% sysRows.forEach(function(r){ %>
+            <div class="flex justify-between items-center py-2.5">
+                <span class="n-label" style="letter-spacing:.1em;"><%= r[1] %></span>
+                <span id="<%= r[0] %>" class="text-xs font-semibold" style="font-family:var(--font-mono);color:var(--n-ink);">--</span>
+            </div>
+            <% }); %>
+        </div>
+    </div>
+</div>
+
+<!-- Disks & Services -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Disk Partitions -->
+    <div class="n-card p-6">
+        <h2 class="n-label mb-4">Disk Partitions</h2>
+        <div id="disks-container" class="space-y-2">
+            <div class="text-center py-4 n-label">Loading disk info...</div>
+        </div>
+    </div>
+
+    <!-- Service Status -->
+    <div class="n-card p-6">
+        <h2 class="n-label mb-4">Service Status</h2>
+        <div class="divide-y" style="border-color:var(--n-line);">
+            <% const srvRows = [
+                ['srv-mediamtx','MediaMTX API'],['srv-hls','HLS Streamer'],['srv-ffmpeg','FFmpeg Engine'],
+                ['srv-ai','AI Engine'],['srv-whatsapp','WhatsApp Bot'],['srv-telegram','Telegram Bot'],['srv-sqlite','Database (SQLite)']
+            ]; %>
+            <% srvRows.forEach(function(r){ %>
+            <div class="flex items-center justify-between py-3">
+                <div class="flex items-center gap-2.5">
+                    <div id="<%= r[0] %>" class="n-dot n-dot-off"></div>
+                    <span class="text-xs font-medium" style="color:var(--n-ink);"><%= r[1] %></span>
+                </div>
+                <span id="<%= r[0] %>-txt" class="n-label">Checking...</span>
+            </div>
+            <% }); %>
+        </div>
+    </div>
+</div>
+
+<script>
+async function fetchSystemInfo() {
+    try {
+        const res = await fetch('<%= base_path %>/api/system/info');
+        const data = await res.json();
+        if (!data.success) return;
+        const s = data.data;
+
+        document.getElementById('serverDot').className = 'n-dot n-dot-live';
+        document.getElementById('serverName').innerText = s.hostname || 'CCTV Server';
+        document.getElementById('serverUptime').innerText = 'Online · ' + formatUptime(s.uptime_sec);
+        document.getElementById('serverCpuLoad').innerText = (s.cpu_load || 0).toFixed(1);
+        document.getElementById('serverMemUsage').innerText = (s.memory_percent || 0).toFixed(0) + '%';
+        document.getElementById('serverDiskUsage').innerText = (s.disk_percent || 0).toFixed(0) + '%';
+        document.getElementById('serverArch').innerText = s.arch || '--';
+
+        // CPU — bar selalu monokrom ink; merah HANYA saat kritis (>80%)
+        const cpuPct = Math.min(100, Math.round((s.cpu_load || 0) / (s.cpu_cores || 1) * 100));
+        document.getElementById('cpu-percent').innerText = cpuPct + '%';
+        setBar('cpu-bar', cpuPct);
+        document.getElementById('cpu-load-1').innerText = '1m ' + (s.cpu_load || 0).toFixed(2);
+        document.getElementById('cpu-load-5').innerText = '5m ' + (s.cpu_load_5 || 0).toFixed(2);
+        document.getElementById('cpu-load-15').innerText = '15m ' + (s.cpu_load_15 || 0).toFixed(2);
+
+        const memPct = Math.round(s.memory_percent || 0);
+        document.getElementById('mem-percent').innerText = memPct + '%';
+        setBar('mem-bar', memPct);
+        document.getElementById('mem-used').innerText = s.memory_used || '0 GB';
+        document.getElementById('mem-free').innerText = s.memory_free || '0 GB';
+        document.getElementById('mem-total').innerText = s.memory_total || '0 GB';
+
+        const diskPct = Math.round(s.disk_percent || 0);
+        document.getElementById('disk-percent').innerText = diskPct + '%';
+        setBar('disk-bar', diskPct);
+        document.getElementById('disk-used').innerText = s.disk_used || '0 GB';
+        document.getElementById('disk-free').innerText = s.disk_free || '0 GB';
+        document.getElementById('disk-total').innerText = s.disk_total || '0 GB';
+
+        document.getElementById('sys-hostname').innerText = s.hostname || '--';
+        document.getElementById('sys-platform').innerText = s.platform || '--';
+        document.getElementById('sys-arch').innerText = s.arch || '--';
+        document.getElementById('sys-cpu').innerText = s.cpu_model || '--';
+        document.getElementById('sys-cores').innerText = (s.cpu_cores ? s.cpu_cores + ' Cores' : '--');
+        document.getElementById('sys-temp').innerText = s.cpu_temp || '--';
+        document.getElementById('sys-uptime').innerText = formatUptime(s.uptime_sec);
+        document.getElementById('sys-node').innerText = s.node_version || '--';
+        document.getElementById('sys-version').innerText = s.app_version || '--';
+
+        if (s.ai_engine && s.ai_engine.status === 'ok') {
+            document.getElementById('sys-ai').innerText = 'Online (' + (s.ai_engine.active_cameras||0) + ' cam)';
+        } else {
+            document.getElementById('sys-ai').innerText = 'Offline';
+        }
+
+        if (s.disks && s.disks.length > 0) {
+            const dc = document.getElementById('disks-container');
+            dc.innerHTML = '';
+            s.disks.forEach(function(d, i) {
+                const pct = Math.round(d.percent || 0);
+                const crit = pct > 85;
+                dc.innerHTML += '<div class="p-3 n-card-2 n-card" style="border-radius:var(--n-radius-sm);">' +
+                    '<div class="flex justify-between mb-1.5"><span class="n-label" style="letter-spacing:.08em;">' + (d.mounted || d.filesystem || 'Disk ' + (i+1)) + '</span>' +
+                    '<span class="n-num text-sm">' + pct + '%</span></div>' +
+                    '<div class="h-1 rounded-full overflow-hidden" style="background:var(--n-line);"><div class="h-full rounded-full" style="width:' + pct + '%;background:' + (crit ? 'var(--n-accent)' : 'var(--n-ink)') + ';"></div></div>' +
+                    '<div class="flex justify-between mt-1" style="font-family:var(--font-mono);font-size:9px;color:var(--n-ink-faint);"><span>' + (d.used || '0') + '</span><span>' + (d.free || '0') + '</span><span>' + (d.total || '0') + '</span></div>' +
+                '</div>';
+            });
+        }
+
+        document.getElementById('disk-percent-badge').innerText = diskPct + '%';
+        document.getElementById('disk-text').innerHTML = (s.disk_used_gb || '0') + ' <span class="text-sm n-label" style="letter-spacing:.1em;">/ ' + (s.disk_total_gb || '0') + ' GB</span>';
+    } catch(e) { console.error('[Dashboard] System info error:', e); }
+}
+
+// Bar monokrom; merah hanya saat kritis (>80%)
+function setBar(id, pct) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.width = pct + '%';
+    el.style.background = pct > 80 ? 'var(--n-accent)' : 'var(--n-ink)';
+}
+
+async function checkSystemServices() {
+    try {
+        const mtx = await fetch('<%= base_path %>/api/mediamtx/health').then(r => r.json()).catch(() => ({}));
+        updateService('srv-mediamtx', mtx.success !== false, 'Running', 'Offline');
+        await fetch('<%= base_path %>/api/system/disk').then(r => r.json()).catch(() => ({}));
+        updateService('srv-hls', true, 'Active', 'Inactive');
+        const ff = await fetch('<%= base_path %>/api/youtube/check-ffmpeg').then(r => r.json()).catch(() => ({}));
+        updateService('srv-ffmpeg', ff.available, 'Available', 'Missing');
+        const ai = await fetch('<%= base_path %>/api/ai-proxy/health').then(r => r.json()).catch(() => ({}));
+        const aiOk = ai && ai.status === 'ok';
+        updateService('srv-ai', aiOk, 'Online', 'Offline');
+        const aiBadge = document.getElementById('ai-status-badge');
+        aiBadge.innerText = aiOk ? 'Online' : 'Offline';
+        aiBadge.className = 'n-pill' + (aiOk ? '' : ' n-pill-accent');
+        document.getElementById('ai-status-text').innerHTML = ((ai && ai.active_cameras) || '0') + ' <span class="text-sm n-label" style="letter-spacing:.1em;">Kamera</span>';
+        const wa = await fetch('<%= base_path %>/admin/whatsapp/status').then(r => r.json()).catch(() => ({}));
+        updateService('srv-whatsapp', wa.connected, 'Connected', 'Disconnected');
+        await fetch('<%= base_path %>/api/settings/telegram').then(r => r.json()).catch(() => ({}));
+        updateService('srv-telegram', false, 'Active', 'Inactive');
+        updateService('srv-sqlite', true, 'Connected', 'Error');
+    } catch(e) { console.error('[Dashboard] Service check error:', e); }
+}
+
+// Dot: hidup = ink (hitam/putih), mati = merah aksen (satu-satunya warna = "perhatian")
+function updateService(dotId, isOk, okText, failText) {
+    const dot = document.getElementById(dotId);
+    const txt = document.getElementById(dotId + '-txt');
+    if (dot) dot.className = 'n-dot ' + (isOk ? 'n-dot-on' : 'n-dot-live');
+    if (txt) {
+        txt.innerText = isOk ? okText : failText;
+        txt.className = 'n-label' + (isOk ? '' : ' n-txt-accent');
+        txt.style.color = isOk ? 'var(--n-ink-soft)' : 'var(--n-accent)';
+    }
+}
+
+function formatUptime(seconds) {
+    if (!seconds) return '--';
+    const d = Math.floor(seconds / 86400), h = Math.floor((seconds % 86400) / 3600),
+          m = Math.floor((seconds % 3600) / 60), s = Math.floor(seconds % 60);
+    let parts = [];
+    if (d > 0) parts.push(d + 'd');
+    if (h > 0) parts.push(h + 'h');
+    if (m > 0) parts.push(m + 'm');
+    parts.push(s + 's');
+    return parts.join(' ');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetchSystemInfo();
+    checkSystemServices();
+    setInterval(fetchSystemInfo, 10000);
+    setInterval(checkSystemServices, 30000);
+});
+</script>
+
+<%- include('partials/admin_footer') %>

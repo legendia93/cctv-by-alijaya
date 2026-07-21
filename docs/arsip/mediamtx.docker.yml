@@ -1,0 +1,59 @@
+# MediaMTX config for the Docker deployment.
+#
+# Based on app/mediamtx.yml but with two Docker-specific additions:
+#   1. authInternalUsers : MediaMTX 1.16.x requires API auth by default and no
+#      longer implicitly trusts localhost the way older versions did. The Node
+#      app talks to the API without credentials, so we declare an anonymous user
+#      permitted for all actions. Access is already constrained to the internal
+#      compose network (the API port need not be published to the public server).
+#   2. Uses the non-deprecated pathDefaults.* keys for recording.
+#
+# NOTE: keep the recording paths pointing at /recordings (the shared volume).
+
+###############################################
+# Authentication (permissive - internal network only)
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: publish
+      - action: read
+      - action: playback
+      - action: api
+      - action: metrics
+      - action: pprof
+
+###############################################
+# Paths
+paths:
+  all:
+    source: publisher
+
+# NOTE: the app overrides these via the API at startup, pushing an absolute
+# recordPath of /app/recordings/... (its own __dirname). We mount the recordings
+# volume at /app/recordings in THIS container too (see docker-compose.yml) so the
+# path is valid here. These defaults are just the pre-app-sync fallback.
+pathDefaults:
+  record: yes
+  recordPath: /app/recordings/%path/%d-%m-%Y_%H-%M-%S
+  recordFormat: fmp4
+  recordSegmentDuration: 60m
+  recordDeleteAfter: 720h
+
+###############################################
+# Servers
+rtspAddress: :8555
+rtpAddress: :8050
+rtcpAddress: :8051
+
+rtmpAddress: :1936
+
+hlsAddress: :8856
+hlsVariant: fmp4
+
+webrtcAddress: :8890
+webrtcLocalUDPAddress: :8190
+
+api: yes
+apiAddress: :9123

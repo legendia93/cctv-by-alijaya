@@ -1,0 +1,70 @@
+# ==========================================================================
+# CCTV Monitoring - Docker Compose  (run from repo root: E:\Project\cctv)
+#
+#   app       : Node.js/Express web dashboard (./app)
+#   mediamtx  : streaming server (RTSP in -> HLS/WebRTC/RTMP out + recording)
+#
+# Both containers share ./data/recordings so MediaMTX writes recordings and
+# the Node app lists/serves them.
+#
+# Quick start:
+#   1. mkdir -p data && cp app/config.json data/config.json
+#      (edit data/config.json: set mediamtx.host = "mediamtx", change password)
+#   2. cp app/cameras.db data/cameras.db     # or start empty; app creates tables
+#   3. docker compose up -d --build
+#   4. open http://localhost:3003  (admin / password from config)
+# ==========================================================================
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:1.16.1
+    container_name: cctv-mediamtx
+    restart: unless-stopped
+    ports:
+      - "8555:8555"     # RTSP  (camera input / pull)
+      - "8856:8856"     # HLS   (browser playback)
+      - "9123:9123"     # API   (control - used by the app)
+      - "1936:1936"     # RTMP  (YouTube-style ingest)
+      - "8890:8890/udp" # WebRTC
+      - "8050:8050/udp" # RTP
+      - "8051:8051/udp" # RTCP
+    volumes:
+      # Docker-specific MediaMTX config (permissive API auth + /recordings path)
+      - ./mediamtx.docker.yml:/mediamtx.yml:ro
+      # Recordings shared with the app. Mounted at the SAME path (/app/recordings)
+      # both here and in the app container, because the app pushes an absolute
+      # recordPath (derived from its own __dirname=/app) to the MediaMTX API.
+      - ./data/recordings:/app/recordings
+    networks:
+      - cctv
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cctv-app
+    restart: unless-stopped
+    depends_on:
+      - mediamtx
+    environment:
+      - TZ=Asia/Jakarta
+      - NODE_ENV=production
+    ports:
+      - "3003:3003"     # Web dashboard
+    volumes:
+      # --- Persisted state (survives container rebuilds) ---
+      - ./data/config.json:/app/config.json          # app config (host -> mediamtx)
+      - ./data/cameras.db:/app/cameras.db             # SQLite database
+      - ./data/recordings:/app/recordings             # shared with mediamtx
+      - ./data/uploads:/app/uploads
+      - ./data/bukti_tf:/app/bukti_tf
+      # --- WhatsApp (Baileys) login session + runtime json (optional) ---
+      - ./data/baileys_auth_info:/app/baileys_auth_info
+      - ./data/subscriptions.json:/app/subscriptions.json
+      - ./data/vapid-keys.json:/app/vapid-keys.json
+    networks:
+      - cctv
+
+networks:
+  cctv:
+    driver: bridge

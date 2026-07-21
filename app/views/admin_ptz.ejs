@@ -1,0 +1,339 @@
+<%- include('partials/admin_header', { title: 'Kontrol PTZ' }) %>
+<%- include('partials/admin_sidebar', { page: 'ptz' }) %>
+
+<script src="<%= base_path %>/js/hls.min.js"></script>
+
+<div class="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 p-6 mb-8 transform transition hover:scale-[1.005] duration-300">
+    <h2 class="text-xl font-bold mb-2 text-purple-400 border-b border-gray-700 pb-2 flex items-center gap-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+        </svg>
+        Kontrol PTZ (Pan-Tilt-Zoom)
+    </h2>
+    <p class="text-xs text-gray-500 mb-8 uppercase tracking-widest font-black">Kontrol pergerakan kamera yang mendukung protokol ONVIF</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <!-- Selection Side -->
+        <div class="space-y-6">
+            <div>
+                <label class="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest">Pilih Kamera PTZ</label>
+                <select id="ptz_camera_select" onchange="updatePreview()" class="w-full bg-gray-900 border border-gray-700 rounded-2xl px-5 py-4 text-white text-sm focus:border-purple-500 transition-all shadow-inner">
+                    <option value="">-- Pilih Kamera --</option>
+                    <% cameras.forEach(camera => { %>
+                        <option value="<%= camera.id %>" data-ptz="<%= camera.ptz_enabled ? 1 : 0 %>"><%= camera.nama %> - <%= camera.lokasi %></option>
+                    <% }); %>
+                </select>
+                <div id="ptz_status" class="mt-3 text-[10px] text-gray-500 italic bg-gray-950/50 p-3 rounded-xl border border-white/5 hidden"></div>
+            </div>
+
+            <!-- Preview Container -->
+            <div id="video_container" class="aspect-video bg-black rounded-2xl border border-gray-700 overflow-hidden relative shadow-2xl">
+                <div id="preview_placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600 gap-4">
+                    <svg class="w-12 h-12 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    <span class="text-[10px] font-black uppercase tracking-widest opacity-40">Preview Live Kamera</span>
+                </div>
+                <video id="ptz_video" class="w-full h-full object-contain hidden" controls autoplay muted playsinline></video>
+                <div id="stream_loading" class="absolute inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center">
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-10 h-10 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+                        <span class="text-[10px] font-black text-purple-400 uppercase tracking-widest">Memuat Stream...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 bg-purple-900/10 rounded-2xl border border-purple-500/20">
+                <h4 class="text-xs font-bold text-purple-400 mb-3 uppercase tracking-widest">Petunjuk Penggunaan</h4>
+                <ul class="text-[11px] text-gray-400 space-y-2 list-disc pl-4">
+                    <li>Pilih kamera yang mendukung fitur PTZ dari daftar di atas.</li>
+                    <li>Tekan dan tahan tombol arah untuk menggerakkan kamera.</li>
+                    <li>Gunakan tombol <span class="text-rose-500 font-bold uppercase">Stop</span> di tengah jika kamera terus bergerak.</li>
+                    <li>Atur kecepatan gerak menggunakan slider di bawah panel kontrol.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Control Side -->
+        <div class="flex flex-col items-center">
+            <div id="ptz_capability_banner" class="hidden w-full max-w-sm mb-3 p-4 rounded-2xl border text-[11px] font-bold text-center"></div>
+            <button id="ptz_override_btn" onclick="markNoPtz()" class="hidden mb-6 text-[10px] text-gray-500 hover:text-rose-400 underline uppercase tracking-widest transition">
+                Kamera ini sebenarnya tidak punya PTZ
+            </button>
+
+            <div id="ptz_panel" class="relative p-10 bg-gray-900 rounded-[3rem] border-4 border-gray-800 shadow-2xl transition-opacity">
+                <!-- D-Pad Grid -->
+                <div class="grid grid-cols-3 gap-4">
+                    <!-- Top -->
+                    <div></div>
+                    <button onmousedown="ptzMove('up')" onmouseup="ptzStop()" ontouchstart="ptzMove('up')" ontouchend="ptzStop()" 
+                        class="w-16 h-16 bg-gray-800 hover:bg-purple-600 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-90 group">
+                        <svg class="w-8 h-8 text-gray-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <div></div>
+
+                    <!-- Middle -->
+                    <button onmousedown="ptzMove('left')" onmouseup="ptzStop()" ontouchstart="ptzMove('left')" ontouchend="ptzStop()"
+                        class="w-16 h-16 bg-gray-800 hover:bg-purple-600 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-90 group">
+                        <svg class="w-8 h-8 text-gray-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button onclick="ptzStop()" 
+                        class="w-16 h-16 bg-rose-600 hover:bg-rose-500 rounded-full flex items-center justify-center transition-all shadow-xl shadow-rose-900/40 active:scale-95 group">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" stroke-width="2.5"/></svg>
+                    </button>
+                    <button onmousedown="ptzMove('right')" onmouseup="ptzStop()" ontouchstart="ptzMove('right')" ontouchend="ptzStop()"
+                        class="w-16 h-16 bg-gray-800 hover:bg-purple-600 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-90 group">
+                        <svg class="w-8 h-8 text-gray-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+
+                    <!-- Bottom -->
+                    <div></div>
+                    <button onmousedown="ptzMove('down')" onmouseup="ptzStop()" ontouchstart="ptzMove('down')" ontouchend="ptzStop()"
+                        class="w-16 h-16 bg-gray-800 hover:bg-purple-600 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-90 group">
+                        <svg class="w-8 h-8 text-gray-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <div></div>
+                </div>
+
+                <!-- Zoom Controls -->
+                <div class="mt-10 flex gap-4 w-full">
+                    <button onmousedown="ptzMove('zoom_in')" onmouseup="ptzStop()" ontouchstart="ptzMove('zoom_in')" ontouchend="ptzStop()"
+                        class="flex-1 bg-gray-800 hover:bg-purple-600 text-white font-black text-[10px] py-4 rounded-2xl transition shadow-lg flex items-center justify-center gap-2 uppercase tracking-widest">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="3" stroke-linecap="round"/></svg>
+                        Zoom In
+                    </button>
+                    <button onmousedown="ptzMove('zoom_out')" onmouseup="ptzStop()" ontouchstart="ptzMove('zoom_out')" ontouchend="ptzStop()"
+                        class="flex-1 bg-gray-800 hover:bg-purple-600 text-white font-black text-[10px] py-4 rounded-2xl transition shadow-lg flex items-center justify-center gap-2 uppercase tracking-widest">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 12H4" stroke-width="3" stroke-linecap="round"/></svg>
+                        Zoom Out
+                    </button>
+                </div>
+            </div>
+
+            <!-- Speed Control -->
+            <div class="mt-8 w-full max-w-xs">
+                <div class="flex justify-between items-center mb-3">
+                    <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Kecepatan Gerak</label>
+                    <span id="speed_val" class="text-sm font-bold text-purple-400">0.5</span>
+                </div>
+                <input type="range" id="ptz_speed" min="0.1" max="1" step="0.1" value="0.5" 
+                    oninput="document.getElementById('speed_val').innerText = this.value"
+                    class="w-full h-2 bg-gray-900 rounded-lg appearance-none cursor-pointer accent-purple-500">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ptzStatusEl = document.getElementById('ptz_status');
+    const hlsBaseUrl = '<%= typeof hlsBaseUrl !== "undefined" ? hlsBaseUrl : "" %>';
+    let hls = null;
+
+    let ptzSupported = false;
+
+    function updatePreview() {
+        const select = document.getElementById('ptz_camera_select');
+        const id = select.value;
+        const video = document.getElementById('ptz_video');
+        const placeholder = document.getElementById('preview_placeholder');
+        const loader = document.getElementById('stream_loading');
+
+        if (hls) {
+            hls.destroy();
+            hls = null;
+        }
+
+        if (!id) {
+            video.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+            loader.classList.add('hidden');
+            setPtzAvailability(null);
+            return;
+        }
+
+        placeholder.classList.add('hidden');
+        loader.classList.remove('hidden');
+        video.classList.remove('hidden');
+
+        // Stream key di MediaMTX adalah cam_<id>, dengan cam_<id>_input sebagai fallback
+        const primaryUrl = hlsBaseUrl + '/cam_' + id + '/index.m3u8';
+        const fallbackUrl = hlsBaseUrl + '/cam_' + id + '_input/index.m3u8';
+
+        playStream(primaryUrl, fallbackUrl);
+        detectPtz(id);
+    }
+
+    function playStream(url, fallbackUrl) {
+        const video = document.getElementById('ptz_video');
+        const loader = document.getElementById('stream_loading');
+        let usedFallback = false;
+
+        if (Hls.isSupported()) {
+            hls = new Hls({
+                manifestLoadingMaxRetry: 3,
+                manifestLoadingRetryDelay: 1000,
+            });
+            hls.loadSource(url);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                video.play();
+                loader.classList.add('hidden');
+            });
+            hls.on(Hls.Events.ERROR, (event, data) => {
+                if (!data.fatal) return;
+                if (!usedFallback && fallbackUrl) {
+                    usedFallback = true;
+                    hls.loadSource(fallbackUrl);
+                    return;
+                }
+                if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                    loader.classList.add('hidden');
+                    showStreamError();
+                } else {
+                    hls.recoverMediaError();
+                }
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            video.addEventListener('loadedmetadata', () => {
+                video.play();
+                loader.classList.add('hidden');
+            }, { once: true });
+            video.addEventListener('error', () => {
+                if (!usedFallback && fallbackUrl) {
+                    usedFallback = true;
+                    video.src = fallbackUrl;
+                } else {
+                    loader.classList.add('hidden');
+                    showStreamError();
+                }
+            });
+        }
+    }
+
+    function showStreamError() {
+        const placeholder = document.getElementById('preview_placeholder');
+        document.getElementById('ptz_video').classList.add('hidden');
+        placeholder.classList.remove('hidden');
+        placeholder.querySelector('span').innerText = 'Stream tidak tersedia';
+    }
+
+    // Deteksi otomatis apakah kamera punya PTZ (probe ONVIF di backend)
+    async function detectPtz(id) {
+        const select = document.getElementById('ptz_camera_select');
+        const cached = select.selectedOptions[0]?.dataset.ptz === '1';
+        setPtzAvailability(cached, 'Memeriksa kemampuan PTZ...');
+
+        try {
+            const res = await fetch('<%= base_path %>/api/cameras/' + id + '/ptz-capability');
+            const data = await res.json();
+            if (data.success) {
+                select.selectedOptions[0].dataset.ptz = data.ptz ? '1' : '0';
+                setPtzAvailability(data.ptz, data.reason, data.unreliable);
+            }
+        } catch (e) {
+            setPtzAvailability(false, 'Gagal memeriksa kemampuan PTZ');
+        }
+    }
+
+    async function markNoPtz() {
+        const id = document.getElementById('ptz_camera_select').value;
+        if (!id) return;
+        try {
+            await fetch('<%= base_path %>/api/cameras/' + id + '/ptz-override', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hasPtz: false })
+            });
+            document.getElementById('ptz_camera_select').selectedOptions[0].dataset.ptz = '0';
+            setPtzAvailability(false, 'Ditandai manual: kamera tanpa PTZ');
+        } catch (e) {}
+    }
+
+    function setPtzAvailability(supported, reason, unreliable) {
+        ptzSupported = !!supported;
+        const banner = document.getElementById('ptz_capability_banner');
+        const panel = document.getElementById('ptz_panel');
+        const overrideBtn = document.getElementById('ptz_override_btn');
+
+        if (supported === null) {
+            banner.classList.add('hidden');
+            overrideBtn.classList.add('hidden');
+            panel.classList.remove('opacity-40', 'pointer-events-none');
+            return;
+        }
+
+        banner.classList.remove('hidden');
+        banner.innerText = reason || (supported ? 'Kamera mendukung PTZ' : 'Kamera ini tidak mendukung PTZ');
+        banner.className = 'w-full max-w-sm mb-3 p-4 rounded-2xl border text-[11px] font-bold text-center ' + (supported
+            ? 'bg-amber-900/20 border-amber-500/30 text-amber-400'
+            : 'bg-gray-800/40 border-gray-600/30 text-gray-400');
+
+        // Tombol override hanya relevan saat kamera MENGKLAIM punya PTZ
+        overrideBtn.classList.toggle('hidden', !supported || !unreliable);
+
+        panel.classList.toggle('opacity-40', !supported);
+        panel.classList.toggle('pointer-events-none', !supported);
+    }
+
+    // Peta arah -> vektor continuousMove yang dipahami backend
+    const PTZ_VECTORS = {
+        up:       (s) => ({ action: 'move', x: 0,  y: s,  zoom: 0 }),
+        down:     (s) => ({ action: 'move', x: 0,  y: -s, zoom: 0 }),
+        left:     (s) => ({ action: 'move', x: -s, y: 0,  zoom: 0 }),
+        right:    (s) => ({ action: 'move', x: s,  y: 0,  zoom: 0 }),
+        zoom_in:  (s) => ({ action: 'zoom', x: 0,  y: 0,  zoom: s }),
+        zoom_out: (s) => ({ action: 'zoom', x: 0,  y: 0,  zoom: -s }),
+    };
+
+    async function sendPtz(body) {
+        const id = document.getElementById('ptz_camera_select').value;
+        const res = await fetch('<%= base_path %>/api/cameras/' + id + '/ptz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        return { ok: res.ok, data: await res.json() };
+    }
+
+    async function ptzMove(direction) {
+        const id = document.getElementById('ptz_camera_select').value;
+        const speed = parseFloat(document.getElementById('ptz_speed').value);
+        if (!id) {
+            showModal('Silahkan pilih kamera terlebih dahulu', 'error');
+            return;
+        }
+        if (!ptzSupported) {
+            showModal('Kamera ini tidak mendukung PTZ', 'error');
+            return;
+        }
+
+        ptzStatusEl.classList.remove('hidden');
+        ptzStatusEl.innerText = 'Mengirim perintah: ' + direction.toUpperCase() + ' (Kecepatan: ' + speed + ')';
+
+        try {
+            const { ok, data } = await sendPtz(PTZ_VECTORS[direction](speed));
+            if (!ok || !data.success) {
+                ptzStatusEl.innerText = 'Gagal: ' + (data.message || data.error || 'Error tidak diketahui');
+                ptzStatusEl.classList.add('text-rose-400');
+            } else {
+                ptzStatusEl.classList.remove('text-rose-400');
+            }
+        } catch (e) {
+            ptzStatusEl.innerText = 'Kesalahan Koneksi API';
+            ptzStatusEl.classList.add('text-rose-400');
+        }
+    }
+
+    async function ptzStop() {
+        const id = document.getElementById('ptz_camera_select').value;
+        if (!id || !ptzSupported) return;
+
+        try {
+            await sendPtz({ action: 'stop' });
+            ptzStatusEl.innerText = 'Perintah dihentikan (STOP)';
+        } catch (e) {}
+    }
+</script>
+
+<%- include('partials/admin_footer') %>

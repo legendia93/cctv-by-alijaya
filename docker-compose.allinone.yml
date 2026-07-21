@@ -1,0 +1,58 @@
+# ==========================================================================
+# CCTV Monitoring - ALL-IN-ONE compose (Opsi C)  — run from repo root.
+#
+# ONE container: Node app + MediaMTX + ffmpeg + transcode scripts, sharing the
+# /app filesystem exactly like bare-metal. Recommended for this app because it
+# handles H.265->H.264 transcoding and recording paths naturally.
+#
+# Prep (once):
+#   mkdir -p data/recordings data/uploads data/bukti_tf data/baileys_auth_info
+#   cp config.docker.json data/config.json     # then set mediamtx.host = "127.0.0.1"
+#   cp app/cameras.db data/cameras.db 2>/dev/null || : > data/cameras.db
+#   echo "[]" > data/subscriptions.json
+#   docker compose -f docker-compose.allinone.yml build
+#   docker run --rm -v "$PWD/data:/out" cctv-allinone \
+#     sh -c 'node -e "const w=require(\"web-push\");process.stdout.write(JSON.stringify(w.generateVAPIDKeys(),null,2))" > /out/vapid-keys.json'
+#
+# Run:
+#   docker compose -f docker-compose.allinone.yml up -d
+#   open http://localhost:3003
+# ==========================================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.allinone
+    image: cctv-allinone
+    container_name: cctv-allinone
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Jakarta
+      - NODE_ENV=production
+      # C3 (opsional): isolasi kamera per pemilik untuk model SaaS
+      # - CCTV_OWNER_SCOPED_LEVELS=vvip,vip,member
+    ports:
+      - "3003:3003"       # Web dashboard
+      # Streaming ports — publish only if you need external RTSP/HLS/RTMP access.
+      - "8555:8555"       # RTSP
+      - "8856:8856"       # HLS
+      - "1936:1936"       # RTMP (YouTube ingest)
+      - "8890:8890/udp"   # WebRTC
+      # 9123 (API) intentionally NOT published — internal use only.
+    volumes:
+      # Single-container MediaMTX config, mounted where the app expects it.
+      - ./mediamtx.single.yml:/app/mediamtx.yml
+      # Persisted state
+      - ./data/config.json:/app/config.json
+      # DB + its WAL/SHM sidecars must all persist, else writes are lost on
+      # container recreate (SQLite in WAL mode). Bind each explicitly.
+      - ./data/cameras.db:/app/cameras.db
+      - ./data/cameras.db-wal:/app/cameras.db-wal
+      - ./data/cameras.db-shm:/app/cameras.db-shm
+      - ./data/recordings:/app/recordings
+      - ./data/uploads:/app/uploads
+      - ./data/bukti_tf:/app/bukti_tf
+      - ./data/baileys_auth_info:/app/baileys_auth_info
+      - ./data/subscriptions.json:/app/subscriptions.json
+      - ./data/vapid-keys.json:/app/vapid-keys.json

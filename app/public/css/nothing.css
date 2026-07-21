@@ -1,0 +1,216 @@
+/* ============================================================
+   NOTHING.CSS — Design token layer, tema "Nothing OS"
+   Sumber kebenaran tunggal untuk warna, radius, garis, tipografi.
+   Di-include SEBELUM konten (via partials/head_theme.ejs).
+   Anti-pola dilarang: emerald, gradient warna, glow, glass/blur.
+   ============================================================ */
+
+/* ---------- 1. Font dot-matrix (self-host, offline) ---------- */
+@font-face {
+  font-family: 'Ndot';
+  src: url('../fonts/ndot.ttf') format('truetype');   /* Pixelify Sans (OFL), self-host */
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- 2. Tokens ---------- */
+:root {                       /* LIGHT (default, sesuai referensi) */
+  --n-bg:        #F4F4F4;     /* off-white kanvas */
+  --n-surface:   #FFFFFF;     /* kartu */
+  --n-surface-2: #ECECEC;     /* kartu sekunder / hover */
+  --n-ink:       #0A0A0A;     /* teks utama, kartu hitam */
+  --n-ink-soft:  #6B6B6B;     /* teks sekunder */
+  --n-ink-faint: #9A9A9A;     /* metadata paling redup */
+  --n-line:      #E2E2E2;     /* garis 1px */
+  --n-line-strong:#0A0A0A;    /* garis penegas (kotak hitam) */
+  --n-accent:    #D71921;     /* MERAH — hemat! */
+  --n-accent-ink:#FFFFFF;     /* teks di atas merah */
+  --n-live:      #0FA3A3;     /* turquois — status LIVE (permintaan user) */
+  --n-on-black:  #F4F4F4;     /* teks di atas kartu hitam */
+  --n-radius:    22px;        /* squircle default */
+  --n-radius-sm: 14px;
+  --n-radius-lg: 28px;
+  --n-radius-pill: 999px;
+  --n-shadow:    0 1px 2px rgba(0,0,0,.06);   /* super tipis */
+  --font-dot:    'Ndot','Space Mono','JetBrains Mono',monospace;
+  --font-sans:   'Space Grotesk','Plus Jakarta Sans','Inter',system-ui,sans-serif;
+  --font-mono:   'Space Mono','JetBrains Mono',monospace;
+}
+
+[data-theme="dark"] {         /* PURE BLACK, bukan navy */
+  --n-bg:        #0A0A0A;
+  --n-surface:   #161616;
+  --n-surface-2: #1E1E1E;
+  --n-ink:       #F4F4F4;
+  --n-ink-soft:  #9A9A9A;
+  --n-ink-faint: #6B6B6B;
+  --n-line:      #2A2A2A;
+  --n-line-strong:#F4F4F4;
+  --n-accent:    #FF2A34;
+  --n-accent-ink:#0A0A0A;
+  --n-live:      #2DD4D4;     /* turquois lebih terang utk dark */
+  --n-on-black:  #F4F4F4;
+  --n-shadow:    0 1px 2px rgba(0,0,0,.5);
+}
+
+/* ---------- 3. Base ---------- */
+html { -webkit-font-smoothing: antialiased; }
+body {
+  background-color: var(--n-bg);
+  color: var(--n-ink);
+  font-family: var(--font-sans);
+}
+::selection { background: var(--n-accent); color: var(--n-accent-ink); }
+
+/* ---------- 4. Tipografi utility ---------- */
+.n-num {                       /* angka teknis — MONO (glyph jelas: 5≠8≠0) */
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 0.95;
+  color: var(--n-ink);
+  font-variant-numeric: tabular-nums;
+}
+.n-num-dot {                   /* opt-in dot-matrix dekoratif (bila sengaja mau pixel) */
+  font-family: var(--font-dot);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 0.95;
+  color: var(--n-ink);
+  font-variant-numeric: tabular-nums;
+}
+.n-label {                     /* metadata uppercase mono */
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--n-ink-soft);
+}
+.n-heading {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--n-ink);
+}
+
+/* ---------- 5. Kartu (bento) ---------- */
+.n-card {
+  background: var(--n-surface);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-radius);
+  box-shadow: var(--n-shadow);
+}
+.n-card-2 { background: var(--n-surface-2); }
+.n-card-black {                /* kartu kontras: hitam di light, putih di dark */
+  background: var(--n-ink);
+  color: var(--n-bg);
+  border: 1px solid var(--n-ink);
+}
+.n-card-black .n-num,
+.n-card-black .n-heading { color: var(--n-bg); }
+.n-card-black .n-label { color: var(--n-bg); opacity: .55; }
+
+/* ---------- 6. Tombol ---------- */
+.n-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  padding: 12px 20px;
+  border-radius: var(--n-radius-pill);
+  border: 1px solid var(--n-line-strong);
+  background: transparent;
+  color: var(--n-ink);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+  text-decoration: none;
+}
+.n-btn:hover { background: var(--n-ink); color: var(--n-bg); }
+.n-btn-accent {                /* SATU tombol primer per layar */
+  background: var(--n-accent);
+  border-color: var(--n-accent);
+  color: var(--n-accent-ink);
+}
+.n-btn-accent:hover { background: var(--n-accent); color: var(--n-accent-ink); opacity: .88; }
+.n-btn-ghost { border-color: var(--n-line); color: var(--n-ink-soft); }
+.n-btn-ghost:hover { background: var(--n-surface-2); color: var(--n-ink); border-color: var(--n-line); }
+.n-btn-sm { padding: 8px 14px; font-size: 10px; }
+
+/* ---------- 7. Pill / badge ---------- */
+.n-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.14em;
+  padding: 4px 10px;
+  border-radius: var(--n-radius-pill);
+  border: 1px solid var(--n-line);
+  color: var(--n-ink-soft);
+  background: transparent;
+}
+.n-pill-xs { font-size: 8px; padding: 2px 7px; gap: 4px; letter-spacing: 0.1em; font-weight: 700; }
+.n-pill-xs .n-dot { width: 5px; height: 5px; }
+.n-pill-solid { background: var(--n-ink); color: var(--n-bg); border-color: var(--n-ink); }
+.n-pill-accent { color: var(--n-accent); border-color: var(--n-accent); }
+.n-pill-live { color: var(--n-live); border-color: var(--n-live); }
+
+/* ---------- 8. Dot status ---------- */
+.n-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--n-ink-soft); }
+.n-dot-live { background: var(--n-accent); animation: nDotPulse 1.8s ease-in-out infinite; }
+.n-dot-on   { background: var(--n-ink); }
+.n-dot-off  { background: var(--n-ink-faint); }
+/* dot berkedip untuk status "online" (ink, bukan merah) — pola sama nDotPulse */
+.n-dot-pulse-on { background: var(--n-ink); animation: nDotPulse 1.8s ease-in-out infinite; }
+/* di dalam pill solid (bg ink), dot ikut warna bg agar terlihat */
+.n-pill-solid .n-dot-pulse-on { background: var(--n-bg); }
+@keyframes nDotPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+/* ---------- 9. Garis pemisah ---------- */
+.n-line { border: 0; border-top: 1px solid var(--n-line); margin: 0; }
+
+/* ---------- 10. Input ---------- */
+.n-input {
+  width: 100%;
+  background: var(--n-surface);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-radius-sm);
+  padding: 12px 14px;
+  color: var(--n-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  transition: border-color .15s ease;
+}
+.n-input::placeholder { color: var(--n-ink-faint); }
+.n-input:focus { outline: none; border-color: var(--n-ink); }
+
+/* ---------- 11. Scrollbar ---------- */
+.n-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+.n-scroll::-webkit-scrollbar-track { background: transparent; }
+.n-scroll::-webkit-scrollbar-thumb { background: var(--n-line); border-radius: 10px; }
+.n-scroll::-webkit-scrollbar-thumb:hover { background: var(--n-ink-faint); }
+
+/* ---------- 12. Animasi masuk (halus, tanpa bounce) ---------- */
+@keyframes nFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.n-fade-in { animation: nFadeIn .35s ease-out both; }
+
+/* ---------- 13. Latar dot-grid (auth + app) ---------- */
+/* Dot-grid halus — SATU sumber untuk halaman auth & shell app.
+   .n-authbg: mask radial dari tengah (kartu login/daftar terpusat).
+   .n-appbg : mask lembut dari atas, dipasang di <body> shell app. */
+.n-authbg,
+.n-appbg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(var(--n-line) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.n-authbg {
+  -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 75%);
+          mask-image: radial-gradient(circle at center, #000 0%, transparent 75%);
+}
+.n-appbg {
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 0%, transparent 80%);
+          mask-image: radial-gradient(120% 90% at 50% 0%, #000 0%, transparent 80%);
+}

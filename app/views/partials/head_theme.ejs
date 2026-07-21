@@ -1,0 +1,125 @@
+<%
+/* ============================================================
+   head_theme.ejs — Sumber kebenaran tunggal tema "Nothing OS".
+   Diselipkan di <head> SETIAP view yang sudah dimigrasi.
+   Berisi: font, Tailwind config bersama (token -> colors.n.*),
+   link nothing.css, dan init tema (light default, persist).
+   Ganti config emerald yang di-inline per file dengan partial ini.
+   ============================================================ */
+%>
+<!-- Fonts (grotesk isi + mono metadata; dot-matrix di-self-host via nothing.css) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- Nothing design tokens -->
+<link rel="stylesheet" href="<%= base_path %>/css/nothing.css" />
+
+<!-- Tailwind (CDN) + config bersama: utility ikut token, auto light/dark -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          n: {
+            bg:        'var(--n-bg)',
+            surface:   'var(--n-surface)',
+            'surface-2':'var(--n-surface-2)',
+            ink:       'var(--n-ink)',
+            'ink-soft':'var(--n-ink-soft)',
+            'ink-faint':'var(--n-ink-faint)',
+            line:      'var(--n-line)',
+            accent:    'var(--n-accent)',
+          }
+        },
+        fontFamily: {
+          dot:  ['Ndot', 'Space Mono', 'monospace'],
+          sans: ['Space Grotesk', 'Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+          mono: ['Space Mono', 'JetBrains Mono', 'monospace'],
+        },
+        borderRadius: {
+          'n':    '22px',
+          'n-sm': '14px',
+          'n-lg': '28px',
+        },
+        boxShadow: {
+          'n': '0 1px 2px rgba(0,0,0,.06)',
+        }
+      }
+    }
+  }
+</script>
+
+<!-- ===== Legacy compatibility layer =====
+     Meng-override kelas Tailwind lama (emerald/gray-navy/gradient/glass) ke token
+     Nothing OS untuk halaman yang BELUM dimigrasi manual. Dimuat SETELAH CDN Tailwind
+     supaya menang. Halaman yang sudah pakai .n-* tidak terpengaruh.  -->
+<style id="n-legacy-compat">
+  /* Kanvas & permukaan gelap-navy -> token */
+  .bg-gray-950,.bg-gray-900\/50,.bg-gray-900{ background-color:var(--n-bg)!important; }
+  .bg-slate-950,.bg-slate-950\/50,.bg-slate-950\/80{ background-color:var(--n-bg)!important; }
+  .bg-gray-800,.bg-gray-800\/50,.bg-gray-700\/50,.bg-slate-800,.bg-slate-900,.bg-slate-900\/50,.bg-slate-900\/90,.bg-slate-900\/95{ background-color:var(--n-surface)!important; }
+  .bg-gray-700,.bg-slate-700{ background-color:var(--n-surface-2)!important; }
+  .text-slate-200,.text-slate-300{ color:var(--n-ink)!important; }
+  .text-slate-400,.text-slate-500{ color:var(--n-ink-soft)!important; }
+  .text-slate-600,.text-slate-700{ color:var(--n-ink-faint)!important; }
+  .border-slate-700,.border-slate-800{ border-color:var(--n-line)!important; }
+
+  /* Border navy -> garis 1px */
+  .border-gray-700,.border-gray-700\/80,.border-gray-700\/50,.border-gray-600\/50,.border-gray-800,.border-slate-700{ border-color:var(--n-line)!important; }
+
+  /* Teks */
+  .text-white{ color:var(--n-ink)!important; }
+  .text-gray-200,.text-gray-300,.text-gray-400{ color:var(--n-ink-soft)!important; }
+  .text-gray-500,.text-gray-600{ color:var(--n-ink-faint)!important; }
+
+  /* Emerald (aksen lama) -> netral ink; JANGAN merah (merah = hemat) */
+  .text-emerald-400,.text-emerald-500,.text-emerald-600,.text-green-400,.text-green-500,.text-cyan-400,.text-cyan-500,.text-blue-400,.text-blue-500,.text-purple-400,.text-purple-500,.text-amber-400,.text-amber-500,.text-orange-400,.text-orange-500{ color:var(--n-ink)!important; }
+  .bg-emerald-500,.bg-emerald-600,.bg-green-500,.bg-green-600{ background-color:var(--n-ink)!important; color:var(--n-bg)!important; }
+  .hover\:bg-emerald-500:hover,.hover\:bg-emerald-600:hover,.hover\:bg-green-600:hover{ background-color:var(--n-ink)!important; opacity:.85; }
+  .bg-emerald-500\/10,.bg-emerald-500\/20,.bg-green-500\/10,.bg-blue-500\/10,.bg-cyan-500\/10,.bg-purple-500\/10,.bg-amber-500\/10,.bg-orange-500\/10{ background-color:var(--n-surface-2)!important; }
+
+  /* Merah/rose = danger, dipertahankan sebagai aksen Nothing */
+  .text-rose-400,.text-rose-500,.text-red-400,.text-red-500{ color:var(--n-accent)!important; }
+  .bg-rose-500,.bg-rose-600,.bg-red-500,.bg-red-600{ background-color:var(--n-accent)!important; color:var(--n-accent-ink)!important; }
+  .bg-rose-500\/10,.bg-rose-500\/20,.bg-red-500\/10,.bg-red-900\/20{ background-color:var(--n-surface-2)!important; }
+
+  /* Buang gradient/glow/glass */
+  .bg-gradient-to-r,.bg-gradient-to-l,.bg-gradient-to-br,.bg-gradient-to-bl,.bg-gradient-to-t,.bg-gradient-to-b{ background-image:none!important; }
+  [class*="shadow-emerald"],[class*="shadow-green"],[class*="shadow-rose"],[class*="shadow-red"]{ --tw-shadow-color:transparent!important; box-shadow:var(--n-shadow)!important; }
+  .glass-panel{ background:var(--n-surface)!important; backdrop-filter:none!important; -webkit-backdrop-filter:none!important; border:1px solid var(--n-line)!important; }
+  .backdrop-blur-sm,.backdrop-blur,.backdrop-blur-md,.backdrop-blur-lg,.backdrop-blur-xl{ backdrop-filter:none!important; -webkit-backdrop-filter:none!important; }
+
+  /* Form focus & accent (checkbox/radio/range) -> ink, bukan emerald */
+  .focus\:border-emerald-500:focus,.focus\:border-emerald-400:focus,.focus\:border-blue-500:focus,.focus\:border-cyan-500:focus,.focus\:ring-emerald-500:focus{ border-color:var(--n-ink)!important; --tw-ring-color:var(--n-ink)!important; }
+  .accent-emerald-500,.accent-emerald-600,.accent-green-500{ accent-color:var(--n-accent)!important; }
+  .placeholder-gray-600::placeholder,.placeholder-gray-500::placeholder{ color:var(--n-ink-faint)!important; }
+
+  /* Selection & scrollbar global konsisten */
+  .custom-scrollbar::-webkit-scrollbar{ width:4px; height:4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb{ background:var(--n-line); border-radius:10px; }
+</style>
+
+<!-- Init tema SEBELUM body render (cegah flash). Light default, persist. -->
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('cctv_theme');
+      if (t !== 'dark' && t !== 'light') t = 'light';          /* default LIGHT */
+      document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+    /* Toggle global — dipakai tombol di header/sidebar */
+    window.toggleTheme = function () {
+      var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      var next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('cctv_theme', next); } catch (e) {}
+      var mc = document.querySelector('meta[name="theme-color"]');
+      if (mc) mc.setAttribute('content', next === 'dark' ? '#0A0A0A' : '#F4F4F4');
+      document.dispatchEvent(new CustomEvent('themechange', { detail: next }));
+    };
+  })();
+</script>

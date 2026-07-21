@@ -1,0 +1,40 @@
+# Build context is the repo root; only ./app is copied into the image.
+docs
+repo.txt
+data
+*.md
+
+# Node
+app/node_modules
+npm-debug.log
+app/.git
+app/.gitignore
+
+# Local runtime state that should NOT be baked into the image.
+# These are mounted as volumes at runtime instead (see docker-compose.yml).
+app/recordings
+app/uploads
+app/bukti_tf
+app/stream_logs
+app/*.log
+app/smart_transcode.log
+
+# WhatsApp / Baileys auth session + generated runtime files
+app/baileys_auth_info
+app/auth_info*
+app/whatsapp_lid_map.json
+
+# Editor / OS junk
+.DS_Store
+Thumbs.db
+
+# Backups shipped in the repo (not needed in image)
+app/*.BACKUP*
+app/*.bak
+app/services/*.BACKUP*
+app/services/*.1
+app/views/*.1
+
+# The MediaMTX binary is provided by its own container, not this image
+app/mediamtx
+app/mediamtx_*.tar.gz

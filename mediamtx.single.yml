@@ -1,0 +1,58 @@
+# MediaMTX config for the SINGLE-container (all-in-one) deployment.
+#
+# In this mode MediaMTX, Node, ffmpeg and the transcode scripts all live in the
+# same container and share the /app filesystem — exactly like the bare-metal
+# install the app was designed for. So:
+#   - the app reaches the API/HLS at 127.0.0.1 (default config, no host override)
+#   - runOnReady can execute /app/smart_transcode.sh (bash + ffmpeg present)
+#   - recordings go to /app/recordings (persisted via volume)
+#
+# The app OVERWRITES most pathDefaults at startup via the API (record path,
+# runOnReady, retention, per-camera paths). These values are the pre-sync
+# fallback + the auth block that the app does not set.
+
+###############################################
+# Authentication — permissive for localhost only.
+# Everything runs in-container and the API/HLS ports are NOT published to the
+# host in single-container mode (only the web port 3003 is), so this is safe.
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: publish
+      - action: read
+      - action: playback
+      - action: api
+      - action: metrics
+      - action: pprof
+
+###############################################
+# Paths
+paths:
+  all:
+    source: publisher
+
+pathDefaults:
+  record: no
+  recordPath: /app/recordings/%path/%Y-%m-%d_%H-%M-%S
+  recordFormat: fmp4
+  recordSegmentDuration: 60m
+  recordDeleteAfter: 720h
+
+###############################################
+# Servers
+rtspAddress: :8555
+rtpAddress: :8050
+rtcpAddress: :8051
+
+rtmpAddress: :1936
+
+hlsAddress: :8856
+hlsVariant: fmp4
+
+webrtcAddress: :8890
+webrtcLocalUDPAddress: :8190
+
+api: yes
+apiAddress: :9123

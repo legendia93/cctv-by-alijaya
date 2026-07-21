@@ -1,0 +1,45 @@
+/* ============================================================
+   modern.css — DIPENSIUNKAN. Sekarang alias ke token Nothing OS.
+   Dulu: emerald + glass + navy. Sekarang cuma meneruskan nilai
+   dari nothing.css agar view lama yang masih me-link file ini
+   tidak mengembalikan tema emerald.
+   ============================================================ */
+:root {
+    --bg-main:   var(--n-bg);
+    --bg-card:   var(--n-surface);
+    --bg-header: var(--n-surface);
+    --accent:    var(--n-accent);
+    --text-main: var(--n-ink);
+    --text-muted:var(--n-ink-soft);
+    --border:    var(--n-line);
+    --glow-green: none;
+    --glow-red:   none;
+}
+
+body {
+    background-color: var(--n-bg);
+    color: var(--n-ink);
+    font-family: var(--font-sans);
+}
+
+.glass-card {
+    background: var(--n-surface);
+    border: 1px solid var(--n-line);
+    border-radius: var(--n-radius);
+    box-shadow: var(--n-shadow);
+    overflow: hidden;
+}
+.glass-card:hover { border-color: var(--n-ink); }
+
+.status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.status-online { background-color: var(--n-ink); }
+.status-offline { background-color: var(--n-accent); }
+
+.nav-link { color: var(--n-ink-soft); }
+.nav-link:hover { color: var(--n-ink); background-color: var(--n-surface-2); }
+.active-nav { color: var(--n-bg); background-color: var(--n-ink); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--n-line); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--n-ink-faint); }

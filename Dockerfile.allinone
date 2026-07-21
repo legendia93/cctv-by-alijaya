@@ -1,0 +1,68 @@
+# ==========================================================================
+# CCTV Monitoring - ALL-IN-ONE image (Opsi C)
+#
+# Node app + MediaMTX + ffmpeg + transcode scripts in ONE container, matching
+# the app's original co-located (bare-metal) design. This makes H.265->H.264
+# transcoding, recording paths, and 127.0.0.1 calls all work naturally.
+#
+# Build context = repo root; app source in ./app.
+# MediaMTX version pinned to match app/install.sh (1.16.1).
+# ==========================================================================
+FROM node:20-bookworm-slim
+
+ARG MEDIAMTX_VERSION=1.16.1
+# Set to arm64v8 on ARM hosts (Raspberry/Orange Pi 64-bit). Default amd64 (PC/VPS).
+ARG MEDIAMTX_ARCH=amd64
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ffmpeg \
+        python3 \
+        make \
+        g++ \
+        sqlite3 \
+        tzdata \
+        curl \
+        ca-certificates \
+        bash \
+        procps \
+        tini \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- Install MediaMTX binary ---
+RUN set -eux; \
+    curl -fsSL -o /tmp/mediamtx.tar.gz \
+      "https://github.com/bluenviron/mediamtx/releases/download/v${MEDIAMTX_VERSION}/mediamtx_v${MEDIAMTX_VERSION}_linux_${MEDIAMTX_ARCH}.tar.gz"; \
+    tar -xzf /tmp/mediamtx.tar.gz -C /usr/local/bin mediamtx; \
+    chmod +x /usr/local/bin/mediamtx; \
+    rm -f /tmp/mediamtx.tar.gz; \
+    /usr/local/bin/mediamtx --version || true
+
+ENV TZ=Asia/Jakarta
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+COPY app/package.json app/package-lock.json* ./
+RUN npm install --omit=dev --no-audit --no-fund || npm install --production --no-audit --no-fund
+# nodemon for optional DEV_MODE (auto-reload). Global, tiny; unused in prod.
+RUN npm install -g nodemon --no-audit --no-fund
+
+COPY app/ ./
+
+# Normalize shell scripts to LF (repo cloned on Windows may have CRLF, which
+# breaks the "#!/bin/bash" shebang -> "not found") and make them executable.
+RUN for f in /app/*.sh; do [ -f "$f" ] && sed -i 's/\r$//' "$f"; done; \
+    chmod +x /app/*.sh 2>/dev/null || true; \
+    mkdir -p recordings uploads bukti_tf stream_logs
+
+# Entrypoint launches MediaMTX (background) then the Node app (foreground).
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+EXPOSE 3003
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
+    CMD curl -fsS http://127.0.0.1:3003/login > /dev/null || exit 1
+
+# tini as PID 1 for correct signal handling / zombie reaping
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]

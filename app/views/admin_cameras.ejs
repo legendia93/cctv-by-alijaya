@@ -1,0 +1,1377 @@
+<%- include('partials/admin_header', { title: 'Manajemen Kamera' }) %>
+<%- include('partials/admin_sidebar', { page: 'cameras' }) %>
+
+<style>
+    .custom-div-icon { background: none !important; border: none !important; }
+</style>
+
+<!-- Add/Edit Camera Modal (hidden by default; opened via "Tambah Kamera" button) -->
+<div id="cameraModalBackdrop" class="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm hidden items-start justify-center overflow-y-auto p-4 md:p-8">
+<div id="form-kamera" class="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 p-6 w-full max-w-4xl my-4 relative">
+    <div class="flex items-center justify-between mb-6 border-b border-gray-700 pb-2">
+        <h2 class="text-xl font-bold text-emerald-400 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span id="formTitle">Tambah Kamera Baru</span>
+        </h2>
+        <button type="button" onclick="closeCameraForm()" class="text-gray-400 hover:text-white hover:bg-gray-700 p-2 rounded-xl transition flex items-center gap-1" title="Tutup form">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
+    <form id="addCctvForm" class="space-y-5">
+        <input type="hidden" name="id" id="edit_cameraId">
+
+        <!-- Baris 1: identitas & akses -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase tracking-widest">Nama Kamera</label>
+                <input type="text" name="nama" id="edit_nama" required class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 placeholder-gray-600 text-sm transition-all" placeholder="Contoh: Depan Kantor">
+            </div>
+            <div>
+                <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase tracking-widest">Lokasi</label>
+                <input type="text" name="lokasi" id="edit_lokasi" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 placeholder-gray-600 text-sm transition-all" placeholder="Contoh: Gedung A Lt 1">
+            </div>
+            <div>
+                <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase tracking-widest">Tipe Kamera</label>
+                <select name="camera_type" id="edit_camera_type" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 text-sm transition-all">
+                    <option value="rtsp">RTSP Camera (dengan recording)</option>
+                    <option value="embed">Embed Camera (streaming only)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase tracking-widest">Level Akses</label>
+                <select name="level" id="edit_level" required onchange="toggleOwnerField()" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 text-sm transition-all">
+                    <option value="umum">UMUM (komunal — semua orang bisa lihat)</option>
+                    <option value="member">MEMBER (privat — hanya pemilik owner_id)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Baris 2: pemilik (muncul hanya untuk kamera privat) -->
+        <div id="owner-field" style="display:none;" class="bg-blue-950/20 border border-blue-500/20 rounded-xl p-4">
+            <label class="block text-[10px] font-black text-blue-400 mb-1 uppercase tracking-widest">👤 Pemilik Kamera (Bind ke User)</label>
+            <select name="owner_id" id="edit_owner_id" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 text-sm transition-all">
+                <option value="">— Tanpa pemilik (tidak akan tampil ke user) —</option>
+                <% (users || []).forEach(function(u) { %>
+                    <option value="<%= u.id %>"><%= u.full_name ? (u.full_name + ' (@' + u.username + ')') : ('@' + u.username) %></option>
+                <% }); %>
+            </select>
+            <small class="text-[10px] text-gray-500 mt-1.5 block">Hanya user ini yang bisa melihat & memutar kamera privat ini.</small>
+        </div>
+
+        <!-- Baris 3: sumber stream (RTSP / Embed) -->
+        <div id="rtsp-fields">
+            <div class="flex items-center justify-between mb-1">
+                <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest">URL RTSP Source</label>
+                <button type="button" onclick="detectStreams()" class="text-[10px] bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg transition font-bold flex items-center gap-1">
+                    <span id="detectStreamText">🔍 Deteksi Stream</span>
+                    <span id="detectStreamSpin" class="hidden animate-spin">⟳</span>
+                </button>
+            </div>
+            <input type="text" name="url_rtsp" id="edit_url_rtsp" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 placeholder-gray-600 text-sm transition-all font-mono" placeholder="rtsp://user:pass@ip:port/stream">
+            <!-- Kredensial opsional untuk deteksi (banyak kamera butuh auth) -->
+            <div class="grid grid-cols-2 gap-2 mt-2">
+                <input type="text" id="detect_username" autocomplete="off" name="detect_username_field" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 placeholder-gray-600 text-xs transition-all" placeholder="User (opsional deteksi)">
+                <input type="password" id="detect_password" autocomplete="new-password" name="detect_password_field" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500 placeholder-gray-600 text-xs transition-all" placeholder="Password (opsional deteksi)">
+            </div>
+            <!-- Hasil deteksi -->
+            <div id="detectResults" class="hidden mt-3 space-y-2"></div>
+            <!-- Toggle rekam ke storage (RTSP only) -->
+            <label class="flex items-center gap-3 mt-3 cursor-pointer select-none">
+                <input type="checkbox" name="enable_recording" id="edit_enable_recording" value="1" checked
+                    class="w-4 h-4 accent-emerald-500 bg-gray-900 border-gray-700 rounded">
+                <span class="text-xs text-gray-300 font-bold">Rekam ke storage</span>
+                <span class="text-[10px] text-gray-500">(matikan untuk kamera live-only, hemat storage)</span>
+            </label>
+        </div>
+        <div id="embed-fields" style="display:none;">
+            <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase tracking-widest">Embed URL</label>
+            <input type="text" name="embed_url" id="edit_embed_url" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 placeholder-gray-600 text-sm transition-all font-mono" placeholder="https://youtube.com/watch?v=... atau https://example.com/stream.m3u8">
+            <small class="text-[10px] text-gray-500 mt-1 block">Supported: YouTube Live, HLS (.m3u8), DASH (.mpd), iframe embed</small>
+        </div>
+
+        <!-- Baris 4: koordinat -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase tracking-widest">Latitude (Optional)</label>
+                <input type="text" name="lat" id="edit_lat" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 placeholder-gray-600 text-sm transition-all" placeholder="-6.2088">
+            </div>
+            <div>
+                <label class="block text-[10px] font-black text-gray-500 mb-1 uppercase tracking-widest">Longitude (Optional)</label>
+                <input type="text" name="lng" id="edit_lng" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 placeholder-gray-600 text-sm transition-all" placeholder="106.8456">
+            </div>
+        </div>
+
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <label class="block text-[10px] font-black text-gray-500 uppercase tracking-widest">Klik Lokasi di Peta</label>
+                <div class="flex gap-4">
+                    <button type="button" onclick="useMyLocation()" class="text-[10px] text-cyan-400 hover:underline flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                        Gunakan Lokasi Saya
+                    </button>
+                    <button type="button" onclick="resetMarker()" class="text-[10px] text-emerald-400 hover:underline">Reset ke Default</button>
+                </div>
+            </div>
+            <div id="inputMap" class="w-full rounded-2xl border border-gray-700 z-10 shadow-inner" style="height: 200px;"></div>
+        </div>
+
+        <!-- Footer aksi -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-700">
+            <button type="button" onclick="closeCameraForm()" class="text-gray-400 hover:text-white font-bold py-3 px-6 rounded-xl transition text-sm">
+                Batal
+            </button>
+            <button type="submit" id="submitBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-emerald-900/20 transition transform active:scale-95 flex items-center whitespace-nowrap">
+                <span id="submitBtnText">Simpan</span>
+            </button>
+        </div>
+    </form>
+</div>
+</div>
+<!-- /Add-Edit Camera Modal -->
+
+<!-- ===== Bulk Add Modal (1 DVR/NVR, banyak channel) ===== -->
+<div id="bulkModalBackdrop" class="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm hidden items-start justify-center overflow-y-auto p-4 md:p-8">
+<div class="n-card p-5 w-full max-w-3xl my-4 relative">
+    <div class="flex items-center justify-between mb-4 pb-2" style="border-bottom:1px solid var(--n-line);">
+        <h2 class="n-heading text-base flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h10M4 18h10"></path></svg>
+            Tambah Massal (Bulk)
+        </h2>
+        <button type="button" onclick="closeBulkForm()" class="p-2 rounded-xl transition" style="color:var(--n-ink-soft);" title="Tutup">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
+    <p class="n-label mb-3" style="text-transform:none;letter-spacing:.03em;font-size:10px;">Satu DVR/NVR → banyak kamera sekaligus dari rentang channel. Preview dulu sebelum commit.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+        <div>
+            <label class="n-label block mb-1">Merek</label>
+            <select id="bulkBrand" class="n-input" style="padding:8px 12px;">
+                <option value="">Memuat merek…</option>
+            </select>
+        </div>
+        <div>
+            <label class="n-label block mb-1">IP Address</label>
+            <input type="text" id="bulkIp" placeholder="192.168.1.100" class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <label class="n-label block mb-1">Port</label>
+            <input type="number" id="bulkPort" placeholder="554" class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <label class="n-label block mb-1">Username</label>
+            <input type="text" id="bulkUsername" autocomplete="off" name="bulk_user_field" placeholder="admin" class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <label class="n-label block mb-1">Password</label>
+            <input type="password" id="bulkPassword" autocomplete="new-password" name="bulk_pass_field" placeholder="••••" class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <label class="n-label block mb-1">Stream</label>
+            <select id="bulkStream" class="n-input" style="padding:8px 12px;">
+                <option value="main">Main (HD)</option>
+                <option value="sub">Sub (SD)</option>
+            </select>
+        </div>
+        <div>
+            <label class="n-label block mb-1">Channel Awal</label>
+            <input type="number" id="bulkChannelStart" value="1" min="1" class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <label class="n-label block mb-1">Channel Akhir</label>
+            <input type="number" id="bulkChannelEnd" value="4" min="1" class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <label class="n-label block mb-1">Level Akses</label>
+            <select id="bulkLevel" class="n-input" style="padding:8px 12px;">
+                <option value="umum">UMUM</option>
+                <option value="member">MEMBER</option>
+                <option value="vip">VIP</option>
+                <option value="vvip">VVIP</option>
+                <option value="pemerintahan">PEMERINTAHAN</option>
+                <option value="admin">ADMIN</option>
+            </select>
+        </div>
+        <div>
+            <label class="n-label block mb-1">Prefix Nama</label>
+            <input type="text" id="bulkNamePrefix" placeholder="DVR Gudang" class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <label class="n-label block mb-1">Lokasi</label>
+            <input type="text" id="bulkLokasi" placeholder="Gudang A" class="n-input" style="padding:8px 12px;">
+        </div>
+        <div class="flex items-end">
+            <label class="flex items-center gap-2 cursor-pointer select-none py-2">
+                <input type="checkbox" id="bulkEnableRecording" checked class="w-4 h-4 rounded">
+                <span class="text-xs font-bold" style="color:var(--n-ink);">Rekam ke storage</span>
+            </label>
+        </div>
+    </div>
+
+    <div id="bulkPreview" class="hidden mt-4 space-y-2 max-h-64 overflow-y-auto n-scroll"></div>
+    <div id="bulkResult" class="hidden mt-4"></div>
+
+    <div class="flex flex-wrap justify-end gap-2 mt-4 pt-3" style="border-top:1px solid var(--n-line);">
+        <button type="button" onclick="closeBulkForm()" class="n-btn n-btn-ghost" style="padding:9px 16px;">Batal</button>
+        <button type="button" id="bulkPreviewBtn" class="n-btn" style="padding:9px 16px;">Preview URL</button>
+        <button type="button" id="bulkSubmitBtn" disabled class="n-btn n-btn-accent" style="padding:9px 16px;opacity:.5;cursor:not-allowed;">Tambah Semua</button>
+    </div>
+</div>
+</div>
+<!-- /Bulk Add Modal -->
+
+<!-- Judul halaman (di luar card, pola sama dgn halaman DVR/APK) -->
+<div class="mb-5">
+    <h1 class="text-2xl font-bold flex items-center gap-3" style="color:var(--n-ink);">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+        </svg>
+        Daftar Kamera Terdaftar
+    </h1>
+    <p class="n-label mt-1"><%= cameras.length %> Unit Aktif di Database</p>
+</div>
+
+<!-- ===== Modal Preview Live (dibuka dari klik badge status) ===== -->
+<div id="previewBackdrop" class="fixed inset-0 z-[1000] bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4" onclick="if(event.target===this) closePreview()">
+    <div class="n-card w-full max-w-3xl overflow-hidden">
+        <div class="flex items-center justify-between gap-3 p-3" style="border-bottom:1px solid var(--n-line);">
+            <div class="min-w-0">
+                <div id="previewTitle" class="font-bold text-white text-sm truncate">Preview</div>
+                <div id="previewSub" class="n-label mt-0.5 truncate">Menghubungkan...</div>
+            </div>
+            <button type="button" onclick="closePreview()" class="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-gray-700/50 transition shrink-0" title="Tutup (Esc)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="relative bg-black" style="aspect-ratio:16/9;">
+            <video id="previewVideo" class="w-full h-full object-contain" controls autoplay muted playsinline></video>
+            <iframe id="previewFrame" class="w-full h-full hidden" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            <div id="previewLoading" class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400 pointer-events-none">
+                <div class="w-8 h-8 border-2 border-gray-600 border-t-emerald-500 rounded-full animate-spin"></div>
+                <span class="n-label">Memuat stream...</span>
+            </div>
+            <div id="previewError" class="absolute inset-0 hidden flex-col items-center justify-center gap-2 text-center px-6">
+                <div class="text-rose-500 text-sm font-bold">Stream tidak dapat dimuat</div>
+                <div class="text-gray-500 text-xs">Kamera mungkin offline atau belum siap di MediaMTX.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Layout 2 kolom: kiri daftar kamera, kanan tools ===== -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+
+<!-- KOLOM KIRI: Daftar Kamera -->
+<div class="xl:col-span-2">
+<div id="daftar-kamera" class="bg-gray-800 rounded-2xl shadow-xl border border-gray-700 overflow-hidden mb-8" style="scroll-margin-top: 90px;">
+    <div class="p-3 border-b border-gray-700 flex flex-nowrap items-center gap-1.5 overflow-x-auto">
+        <button type="button" onclick="openBulkForm()" class="n-btn whitespace-nowrap shrink-0" style="padding:5px 10px;font-size:10px;" title="Tambah banyak kamera dari 1 DVR/NVR">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h10M4 18h10"></path></svg>
+            Massal
+        </button>
+        <button type="button" id="toggleFormBtn" onclick="toggleCameraForm()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-3 rounded-lg transition transform active:scale-95 flex items-center gap-1.5 whitespace-nowrap shrink-0">
+            <svg id="toggleFormIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span id="toggleFormText" class="text-[10px] uppercase tracking-wider">Tambah</span>
+        </button>
+        <button onclick="filterCameras('all')" id="filter-all" class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition bg-emerald-600 text-white whitespace-nowrap shrink-0">
+            Semua (<span id="count-all"><%= cameras.length %></span>)
+        </button>
+        <button onclick="filterCameras('rtsp')" id="filter-rtsp" class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition bg-gray-700 text-gray-400 hover:bg-gray-600 whitespace-nowrap shrink-0">
+            RTSP (<span id="count-rtsp"><%= cameras.filter(c => (c.camera_type || 'rtsp') === 'rtsp').length %></span>)
+        </button>
+        <button onclick="filterCameras('embed')" id="filter-embed" class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition bg-gray-700 text-gray-400 hover:bg-gray-600 whitespace-nowrap shrink-0">
+            Embed (<span id="count-embed"><%= cameras.filter(c => c.camera_type === 'embed').length %></span>)
+        </button>
+        <div class="relative ml-auto shrink-0" style="width:180px;">
+            <input id="cameraSearch" type="text" class="w-full bg-gray-900 border border-gray-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500 transition-all" placeholder="Cari kamera...">
+            <svg class="w-3.5 h-3.5 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+    </div>
+
+    <%
+        // owner_id -> display name lookup, for the "Pemilik" column.
+        const userById = {};
+        (users || []).forEach(function(u) {
+            userById[String(u.id)] = u.full_name ? (u.full_name + ' (@' + u.username + ')') : ('@' + u.username);
+        });
+    %>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-gray-900/50 text-gray-500 text-[10px] uppercase tracking-widest font-black">
+                    <th class="px-3 py-2 border-b border-gray-700 text-center">ID</th>
+                    <th class="px-3 py-2 border-b border-gray-700 text-center">Status</th>
+                    <th class="px-3 py-2 border-b border-gray-700">Identitas Kamera</th>
+                    <th class="px-3 py-2 border-b border-gray-700">Lokasi & Akses</th>
+                    <th class="px-3 py-2 border-b border-gray-700">Pemilik</th>
+                    <th class="px-3 py-2 border-b border-gray-700 text-center">Kelola</th>
+                </tr>
+            </thead>
+            <tbody id="cameraTableBody" class="divide-y divide-gray-700">
+                <% if (cameras.length === 0) { %>
+                    <tr id="emptyStateRow">
+                        <td colspan="6" class="p-0">
+                            <div class="flex flex-col items-center justify-center text-center py-16 px-6">
+                                <div class="w-20 h-20 rounded-3xl bg-gray-900 border border-gray-700 flex items-center justify-center mb-5">
+                                    <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="text-white font-bold text-lg mb-1">Belum ada kamera</div>
+                                <p class="text-gray-500 text-xs mb-6 max-w-xs">Tambahkan kamera RTSP atau embed untuk mulai memantau. Gunakan tombol di bawah atau fitur ONVIF Scan &amp; Generator URL.</p>
+                                <button type="button" onclick="openCameraForm()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-emerald-900/20 transition transform active:scale-95 flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                    <span class="text-xs uppercase tracking-widest">Tambah Kamera Pertama</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                <% } %>
+                <% cameras.forEach(function(camera) { %>
+                    <tr class="group hover:bg-gray-700/30 transition duration-150 camera-row" data-camera-type="<%= camera.camera_type || 'rtsp' %>">
+                        <td class="px-3 py-1.5 text-center text-gray-600 font-mono text-xs"><%= camera.id %></td>
+                        <td class="px-3 py-1.5 text-center">
+                            <div class="flex justify-center">
+                                <span id="admin-status-<%= camera.id %>" class="n-pill n-pill-xs cursor-pointer hover:opacity-70 transition"
+                                    onclick="openPreview('<%= camera.id %>')"
+                                    data-nama="<%= camera.nama %>"
+                                    data-camera_type="<%= camera.camera_type || 'rtsp' %>"
+                                    data-embed_url="<%= camera.embed_url || '' %>"
+                                    title="Klik untuk preview live">
+                                    <span class="n-dot"></span>CEK
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-3 py-1.5">
+                            <div class="flex items-center gap-2">
+                                <div class="font-bold text-white text-sm"><%= camera.nama %></div>
+                                <% if (camera.camera_type === 'embed') { %>
+                                    <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-cyan-900/40 text-cyan-400 border border-cyan-500/20">🌐 EMBED</span>
+                                <% } else { %>
+                                    <span id="rec-badge-<%= camera.id %>" class="n-pill n-pill-xs <%= camera.enable_recording === 0 ? 'n-pill-live' : 'n-pill-accent' %>"><% if (camera.enable_recording !== 0) { %><span class="n-dot n-dot-live"></span><% } %><%= camera.enable_recording === 0 ? 'LIVE' : 'REC' %></span>
+                                <% } %>
+                            </div>
+                            <div class="text-[10px] text-gray-500 font-mono truncate max-w-[200px]">
+                                <%= camera.camera_type === 'embed' ? (camera.embed_url || 'No URL') : (camera.url_rtsp || 'No URL') %>
+                            </div>
+                        </td>
+                        <td class="px-3 py-1.5">
+                            <div class="flex items-center gap-2">
+                            <span class="text-gray-300 text-xs truncate max-w-[130px]"><%= camera.lokasi %></span>
+                            <span class="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border shrink-0
+                                <%= camera.level === 'umum' ? 'bg-emerald-900/40 text-emerald-400 border-emerald-500/20' : 
+                                    camera.level === 'member' ? 'bg-blue-900/40 text-blue-400 border-blue-500/20' : 
+                                    camera.level === 'vip' ? 'bg-purple-900/40 text-purple-400 border-purple-500/20' : 'bg-rose-900/40 text-rose-400 border-rose-500/20' %>">
+                                <%= camera.level %>
+                            </span>
+                            </div>
+                        </td>
+                        <td class="px-3 py-1.5">
+                            <% if (camera.level === 'umum') { %>
+                                <span class="text-[10px] text-gray-500 italic">Publik (komunal)</span>
+                            <% } else if (camera.owner_id && userById[String(camera.owner_id)]) { %>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-6 h-6 rounded-full bg-blue-900/40 border border-blue-500/20 flex items-center justify-center text-[10px] shrink-0">👤</span>
+                                    <span class="text-xs text-gray-200 truncate max-w-[140px]"><%= userById[String(camera.owner_id)] %></span>
+                                </div>
+                            <% } else { %>
+                                <span class="text-[10px] text-amber-500/80 font-bold">⚠ Belum di-bind</span>
+                            <% } %>
+                        </td>
+                        <td class="px-3 py-1.5 text-center">
+                            <div class="flex justify-center items-center gap-2">
+                                <% if ((camera.camera_type || 'rtsp') !== 'embed') { %>
+                                    <!-- Toggle rekam per-kamera (langsung sync MediaMTX) -->
+                                    <label class="rec-toggle inline-flex items-center cursor-pointer" title="Rekam ke storage">
+                                        <input type="checkbox" class="rec-toggle-input sr-only peer" data-id="<%= camera.id %>" <%= camera.enable_recording === 0 ? '' : 'checked' %>>
+                                        <span class="relative w-9 h-5 bg-gray-600 rounded-full peer-checked:bg-rose-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-transform peer-checked:after:translate-x-4"></span>
+                                    </label>
+                                <% } %>
+                                <div class="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                                <button class="edit-btn text-blue-400 hover:bg-blue-400/10 p-1 rounded-lg transition"
+                                    data-id="<%= camera.id %>" data-nama="<%= camera.nama %>" data-lokasi="<%= camera.lokasi %>"
+                                    data-url="<%= camera.url_rtsp || '' %>" data-lat="<%= camera.lat %>" data-lng="<%= camera.lng %>"
+                                    data-level="<%= camera.level %>" data-camera_type="<%= camera.camera_type || 'rtsp' %>"
+                                    data-embed_url="<%= camera.embed_url || '' %>"
+                                    data-owner_id="<%= camera.owner_id || '' %>"
+                                    data-enable_recording="<%= camera.enable_recording === 0 ? 0 : 1 %>">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                </button>
+                                <button onclick="deleteCamera('<%= camera.id %>')" class="text-rose-500 hover:bg-rose-500/10 p-1 rounded-lg transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</div>
+</div><!-- /KOLOM KIRI -->
+
+<!-- KOLOM KANAN: Tools (ONVIF Scan + Generator URL) -->
+<div class="xl:col-span-1 space-y-4">
+
+<!-- ONVIF Scan Section -->
+<div class="n-card p-4">
+    <h2 class="n-heading text-base mb-3 pb-2 flex items-center gap-2" style="border-bottom:1px solid var(--n-line);">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9a9 9 0 019-9m-9 9a9 9 0 000 18z"></path>
+        </svg>
+        Cari Kamera (ONVIF Scan)
+    </h2>
+    <div class="grid grid-cols-1 gap-2.5 items-end">
+        <div>
+            <label class="n-label block mb-1">Username</label>
+            <input type="text" id="onvif_username" autocomplete="off" name="onvif_user_field" placeholder="admin" class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <label class="n-label block mb-1">Password</label>
+            <input type="password" id="onvif_password" autocomplete="new-password" name="onvif_pass_field" placeholder="••••" class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <label class="n-label block mb-1">Timeout (dtk)</label>
+            <input type="number" id="onvif_timeout" value="8" class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <button type="button" id="onvif_scan_btn" class="n-btn n-btn-accent w-full" style="padding:9px 16px;">
+                <span id="onvif_scan_text">Mulai Scan</span>
+                <span id="onvif_scan_spin" class="hidden animate-spin">⟳</span>
+            </button>
+        </div>
+    </div>
+    <div id="onvif_results" class="hidden mt-4 space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-2"></div>
+</div>
+
+<!-- RTSP URL Generator Section -->
+<div class="n-card p-4">
+    <h2 class="n-heading text-base mb-3 pb-2 flex items-center gap-2" style="border-bottom:1px solid var(--n-line);">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+        </svg>
+        Generator URL RTSP
+    </h2>
+    <form id="rtspGeneratorForm" class="grid grid-cols-1 gap-2.5 items-end">
+        <div>
+            <label class="n-label block mb-1">Merek Kamera</label>
+            <select id="rtsp_brand" name="brand" required class="n-input" style="padding:8px 12px;">
+                <option value="">Pilih Merek...</option>
+                <option value="hikvision">Hikvision</option>
+                <option value="dahua">Dahua</option>
+                <option value="axis">Axis</option>
+                <option value="foscam">Foscam</option>
+                <option value="reolink">Reolink</option>
+                <option value="uniview">Uniview (UNV)</option>
+                <option value="tp_link">TP-Link Tapo</option>
+                <option value="bardi">Bardi</option>
+                <option value="generic">Generic/Other</option>
+            </select>
+        </div>
+        <div>
+            <label class="n-label block mb-1">IP Address</label>
+            <input type="text" id="rtsp_ip" placeholder="192.168.1.10" required class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <label class="n-label block mb-1">Username</label>
+            <input type="text" id="rtsp_username" autocomplete="off" name="rtsp_user_field" placeholder="admin" required class="n-input" style="padding:8px 12px;">
+        </div>
+        <div>
+            <label class="n-label block mb-1">Password</label>
+            <input type="password" id="rtsp_password" autocomplete="new-password" name="rtsp_pass_field" placeholder="••••" required class="n-input" style="padding:8px 12px;">
+        </div>
+        <div class="col-span-1 mt-1">
+            <button type="submit" class="n-btn n-btn-accent w-full" style="padding:9px 16px;">
+                Generate URL
+            </button>
+        </div>
+    </form>
+    <div id="rtspResult" class="hidden mt-4 p-3 n-card-2" style="border-radius:var(--n-radius-sm);">
+        <div class="flex items-center justify-between mb-2">
+            <span id="rtspBrandName" class="n-label">URL HASIL</span>
+            <button onclick="copyRtspUrl()" class="n-btn" style="padding:4px 10px;font-size:9px;">SALIN</button>
+        </div>
+        <code id="rtspUrl" class="block text-xs break-all font-mono p-2 rounded-lg" style="color:var(--n-accent);background:var(--n-bg);border:1px solid var(--n-line);"></code>
+        <p id="rtspDescription" class="text-[10px] mt-2 italic" style="color:var(--n-ink-faint);"></p>
+    </div>
+</div>
+
+</div><!-- /KOLOM KANAN -->
+</div><!-- /grid 2 kolom -->
+
+<script>
+    // Toggle Camera Type Fields
+    document.getElementById('edit_camera_type').addEventListener('change', function() {
+        const isEmbed = this.value === 'embed';
+        document.getElementById('rtsp-fields').style.display = isEmbed ? 'none' : 'block';
+        document.getElementById('embed-fields').style.display = isEmbed ? 'block' : 'none';
+        
+        // Update required attributes
+        document.getElementById('edit_url_rtsp').required = !isEmbed;
+        document.getElementById('edit_embed_url').required = isEmbed;
+    });
+
+    // ===== Show/Hide Add-Camera Form =====
+    // Reset form ke mode "Tambah" (bersihkan sisa state edit).
+    function resetCameraForm() {
+        const form = document.getElementById('addCctvForm');
+        if (form) form.reset();
+        document.getElementById('edit_cameraId').value = '';
+        document.getElementById('formTitle').innerText = 'Tambah Kamera Baru';
+        document.getElementById('submitBtnText').innerText = 'Simpan';
+        // Kembali ke tampilan default: RTSP
+        const sel = document.getElementById('edit_camera_type');
+        sel.value = 'rtsp';
+        sel.dispatchEvent(new Event('change'));
+        toggleOwnerField(); // sembunyikan field pemilik (default level = umum)
+    }
+
+    // Tampilkan field "Pemilik Kamera" hanya untuk kamera privat (level != umum).
+    function toggleOwnerField() {
+        const level = document.getElementById('edit_level').value;
+        const field = document.getElementById('owner-field');
+        if (!field) return;
+        if (level && level !== 'umum') {
+            field.style.display = '';
+        } else {
+            field.style.display = 'none';
+            document.getElementById('edit_owner_id').value = ''; // umum = tanpa pemilik
+        }
+    }
+
+    // Sinkronkan tombol header dengan state form (buka/tutup).
+    function setToggleBtnState(isOpen) {
+        const text = document.getElementById('toggleFormText');
+        const icon = document.getElementById('toggleFormIcon');
+        const btn = document.getElementById('toggleFormBtn');
+        if (!text || !icon || !btn) return;
+        if (isOpen) {
+            text.innerText = 'Tutup Form';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>';
+            btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+            btn.classList.add('bg-gray-600', 'hover:bg-gray-500');
+        } else {
+            text.innerText = 'Tambah Kamera';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>';
+            btn.classList.remove('bg-gray-600', 'hover:bg-gray-500');
+            btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+        }
+    }
+
+    // Tombol header: buka kalau tertutup, tutup kalau terbuka.
+    function toggleCameraForm() {
+        const backdrop = document.getElementById('cameraModalBackdrop');
+        if (backdrop.classList.contains('hidden')) {
+            openCameraForm();
+        } else {
+            closeCameraForm();
+        }
+    }
+
+    // Tampilkan modal form. reset=true untuk mode tambah baru.
+    function openCameraForm(reset = true) {
+        if (reset) resetCameraForm();
+        const backdrop = document.getElementById('cameraModalBackdrop');
+        backdrop.classList.remove('hidden');
+        backdrop.classList.add('flex');
+        document.body.style.overflow = 'hidden'; // cegah scroll background
+        setToggleBtnState(true);
+        // Leaflet perlu recalculate ukuran karena tadinya display:none
+        setTimeout(() => { if (typeof map !== 'undefined' && map) map.invalidateSize(); }, 80);
+    }
+
+    // Sembunyikan modal form.
+    function closeCameraForm() {
+        const backdrop = document.getElementById('cameraModalBackdrop');
+        backdrop.classList.add('hidden');
+        backdrop.classList.remove('flex');
+        document.body.style.overflow = '';
+        setToggleBtnState(false);
+        resetCameraForm();
+        // bersihkan query ?add / ?type dari URL biar reload tak buka form lagi
+        history.replaceState(null, '', window.location.pathname + window.location.hash);
+    }
+
+    // Tutup modal: klik backdrop (di luar panel) atau tombol Esc.
+    document.getElementById('cameraModalBackdrop').addEventListener('mousedown', (e) => {
+        if (e.target.id === 'cameraModalBackdrop') closeCameraForm();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.getElementById('cameraModalBackdrop').classList.contains('flex')) {
+            closeCameraForm();
+        }
+    });
+
+    // Buka otomatis kalau datang dari sidebar (?add=1) atau ?type=rtsp|embed
+    (function applyOpenFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        const t = (params.get('type') || '').toLowerCase();
+        const wantAdd = params.get('add') === '1' || t === 'embed' || t === 'rtsp';
+        if (!wantAdd) return;
+        openCameraForm(true);
+        if (t === 'embed' || t === 'rtsp') {
+            const sel = document.getElementById('edit_camera_type');
+            sel.value = t;
+            sel.dispatchEvent(new Event('change'));
+        }
+    })();
+
+    // Map Logic
+    const mapConfigData = JSON.parse('<%- JSON.stringify(mapConfig || {default_lat: -6.2517, default_lng: 107.9207, default_zoom: 13}) %>');
+    const DEFAULT_LAT = mapConfigData.default_lat;
+    const DEFAULT_LNG = mapConfigData.default_lng;
+    const DEFAULT_ZOOM = mapConfigData.default_zoom;
+    let map = L.map('inputMap').setView([DEFAULT_LAT, DEFAULT_LNG], DEFAULT_ZOOM);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    }).addTo(map);
+
+    const neonIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `
+            <div class="relative group">
+                <div class="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-2xl border-2 border-white ring-4 ring-emerald-500/20 transform -rotate-45">
+                    <svg class="w-6 h-6 transform rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </div>
+            </div>
+        `,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+
+    let marker = L.marker([DEFAULT_LAT, DEFAULT_LNG], { draggable: true, icon: neonIcon }).addTo(map);
+    
+    marker.on('dragend', () => {
+        const pos = marker.getLatLng();
+        document.getElementById('edit_lat').value = pos.lat.toFixed(6);
+        document.getElementById('edit_lng').value = pos.lng.toFixed(6);
+    });
+
+    map.on('click', (e) => {
+        marker.setLatLng(e.latlng);
+        document.getElementById('edit_lat').value = e.latlng.lat.toFixed(6);
+        document.getElementById('edit_lng').value = e.latlng.lng.toFixed(6);
+    });
+
+    function resetMarker() {
+        const defaultPos = [DEFAULT_LAT, DEFAULT_LNG];
+        marker.setLatLng(defaultPos);
+        map.setView(defaultPos, DEFAULT_ZOOM);
+        document.getElementById('edit_lat').value = DEFAULT_LAT;
+        document.getElementById('edit_lng').value = DEFAULT_LNG;
+    }
+
+    function useMyLocation() {
+        if (!navigator.geolocation) {
+            showModal('Browser Anda tidak mendukung geolokasi', 'error');
+            return;
+        }
+        showModal('Mengambil lokasi perangkat...', 'info');
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            marker.setLatLng([lat, lng]);
+            map.setView([lat, lng], 16);
+            document.getElementById('edit_lat').value = lat.toFixed(6);
+            document.getElementById('edit_lng').value = lng.toFixed(6);
+        }, (err) => {
+            showModal('Gagal mengambil lokasi: ' + err.message, 'error');
+        });
+    }
+
+    // Tandai / bersihkan field yang invalid (border merah + pesan inline)
+    function markInvalid(el, msg) {
+        el.classList.add('border-rose-500');
+        el.classList.remove('border-gray-700');
+        let hint = el.parentElement.querySelector('.field-error');
+        if (!hint) {
+            hint = document.createElement('p');
+            hint.className = 'field-error text-[10px] text-rose-400 mt-1';
+            el.parentElement.appendChild(hint);
+        }
+        hint.innerText = msg;
+    }
+    function clearInvalid(el) {
+        el.classList.remove('border-rose-500');
+        el.classList.add('border-gray-700');
+        const hint = el.parentElement.querySelector('.field-error');
+        if (hint) hint.remove();
+    }
+
+    // Validasi form kamera di client. Return true kalau valid.
+    function validateCameraForm() {
+        let ok = true;
+        const nama = document.getElementById('edit_nama');
+        const type = document.getElementById('edit_camera_type').value;
+        const rtsp = document.getElementById('edit_url_rtsp');
+        const embed = document.getElementById('edit_embed_url');
+        [nama, rtsp, embed].forEach(clearInvalid);
+
+        if (!nama.value.trim()) { markInvalid(nama, 'Nama kamera wajib diisi.'); ok = false; }
+
+        if (type === 'embed') {
+            if (!embed.value.trim()) { markInvalid(embed, 'Embed URL wajib diisi.'); ok = false; }
+        } else {
+            const v = rtsp.value.trim();
+            if (!v) {
+                markInvalid(rtsp, 'URL RTSP wajib diisi.'); ok = false;
+            } else if (!/^rtsp:\/\/.+/i.test(v)) {
+                markInvalid(rtsp, 'URL harus diawali rtsp:// (mis. rtsp://user:pass@ip:554/stream).'); ok = false;
+            }
+        }
+        return ok;
+    }
+
+    // Form Handle
+    document.getElementById('addCctvForm').onsubmit = async (e) => {
+        e.preventDefault();
+        if (!validateCameraForm()) return;
+        const id = document.getElementById('edit_cameraId').value;
+        const formData = new URLSearchParams(new FormData(e.target));
+        // Checkbox tak tercentang TIDAK ikut FormData → server salah anggap "default ON".
+        // Set eksplisit 0/1 agar "matikan rekam" benar-benar tersimpan.
+        const recEl = document.getElementById('edit_enable_recording');
+        formData.set('enable_recording', (recEl && recEl.checked) ? '1' : '0');
+        const url = id ? '<%= base_path %>/admin/camera/edit' : '<%= base_path %>/admin/camera/add';
+
+        try {
+            const res = await fetch(url, { method: 'POST', body: formData });
+            if (res.ok) {
+                showModal(id ? 'Kamera berhasil diperbarui!' : 'Kamera baru berhasil ditambahkan!');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showModal('Gagal menyimpan kamera', 'error');
+            }
+        } catch (err) { showModal('Kesalahan koneksi', 'error'); }
+    };
+
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.onclick = () => {
+            const d = btn.dataset;
+            openCameraForm(false); // tampilkan panel tanpa reset (kita isi manual di bawah)
+            // Field kredensial deteksi HANYA untuk fitur deteksi stream — bukan milik kamera.
+            // Kosongkan agar browser tak meng-autofill user/pass tersimpan ke sini.
+            document.getElementById('detect_username').value = '';
+            document.getElementById('detect_password').value = '';
+            document.getElementById('edit_cameraId').value = d.id;
+            document.getElementById('edit_nama').value = d.nama;
+            document.getElementById('edit_lokasi').value = d.lokasi;
+            document.getElementById('edit_lat').value = d.lat || '';
+            document.getElementById('edit_lng').value = d.lng || '';
+            document.getElementById('edit_level').value = d.level || 'umum';
+            document.getElementById('edit_owner_id').value = d.owner_id || '';
+            toggleOwnerField(); // tampilkan/sembunyikan field pemilik sesuai level
+
+            // Handle camera type
+            const cameraType = d.camera_type || 'rtsp';
+            document.getElementById('edit_camera_type').value = cameraType;
+            
+            if (cameraType === 'embed') {
+                document.getElementById('edit_embed_url').value = d.embed_url || '';
+                document.getElementById('rtsp-fields').style.display = 'none';
+                document.getElementById('embed-fields').style.display = 'block';
+                document.getElementById('edit_url_rtsp').required = false;
+                document.getElementById('edit_embed_url').required = true;
+            } else {
+                document.getElementById('edit_url_rtsp').value = d.url || '';
+                document.getElementById('rtsp-fields').style.display = 'block';
+                document.getElementById('embed-fields').style.display = 'none';
+                document.getElementById('edit_url_rtsp').required = true;
+                document.getElementById('edit_embed_url').required = false;
+                document.getElementById('edit_enable_recording').checked = (d.enable_recording !== '0');
+            }
+            
+            document.getElementById('formTitle').innerText = 'Edit Kamera: ' + d.nama;
+            document.getElementById('submitBtnText').innerText = 'Update';
+            
+            if (d.lat && d.lng) {
+                const pos = [parseFloat(d.lat), parseFloat(d.lng)];
+                marker.setLatLng(pos);
+                // map.setView dijalankan setelah modal tampil + invalidateSize (openCameraForm)
+                setTimeout(() => map.setView(pos, 16), 120);
+            }
+        };
+    });
+
+    async function deleteCamera(id) {
+        showModal("Hapus kamera ini secara permanen?", "confirm", async () => {
+            const res = await fetch('<%= base_path %>/admin/camera/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            if (res.ok) window.location.reload();
+        });
+    }
+
+    // ===== Toggle rekam per-kamera langsung dari tabel =====
+    document.querySelectorAll('.rec-toggle-input').forEach(input => {
+        input.addEventListener('change', async (e) => {
+            const id = input.dataset.id;
+            const enable = input.checked ? '1' : '0';
+            input.disabled = true;
+            try {
+                const res = await fetch('<%= base_path %>/admin/camera/toggle-recording', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, enable })
+                });
+                if (!res.ok) throw new Error();
+                // Update badge REC/LIVE di kolom identitas.
+                const badge = document.getElementById('rec-badge-' + id);
+                if (badge) {
+                    if (input.checked) {
+                        badge.innerHTML = '<span class="n-dot n-dot-live"></span>REC';
+                        badge.className = 'n-pill n-pill-xs n-pill-accent';
+                    } else {
+                        badge.textContent = 'LIVE';
+                        badge.className = 'n-pill n-pill-xs n-pill-live';
+                    }
+                }
+                showModal(input.checked ? 'Rekaman diaktifkan untuk kamera ini.' : 'Kamera ini kini live-only (tidak direkam).');
+            } catch (err) {
+                input.checked = !input.checked; // rollback
+                showModal('Gagal mengubah status rekam.', 'error');
+            } finally {
+                input.disabled = false;
+            }
+        });
+    });
+
+    // ONVIF Handle
+    document.getElementById('onvif_scan_btn').onclick = async () => {
+        const btn = document.getElementById('onvif_scan_btn');
+        const list = document.getElementById('onvif_results');
+        const text = document.getElementById('onvif_scan_text');
+        const spin = document.getElementById('onvif_scan_spin');
+        
+        btn.disabled = true;
+        text.innerText = 'Scanning...';
+        spin.classList.remove('hidden');
+        list.innerHTML = '';
+        list.classList.remove('hidden');
+
+        try {
+            const res = await fetch('<%= base_path %>/api/onvif/discover', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: document.getElementById('onvif_username').value,
+                    password: document.getElementById('onvif_password').value,
+                    timeout: document.getElementById('onvif_timeout').value
+                })
+            });
+            const data = await res.json();
+            if (!data.devices || data.devices.length === 0) {
+                list.innerHTML = '<div class="text-center p-4 bg-gray-900 rounded-xl text-gray-500 text-xs italic">Tidak ada kamera ONVIF yang ditemukan di jaringan lokal.</div>';
+            } else {
+                data.devices.forEach(d => {
+                    const div = document.createElement('div');
+                    div.className = 'p-4 bg-gray-900 rounded-xl border border-gray-700 flex justify-between items-center group hover:border-cyan-500/50 transition';
+                    div.innerHTML = `
+                        <div class="min-w-0">
+                            <div class="text-white text-sm font-bold truncate">\${d.name || 'Unnamed Camera'}</div>
+                            <div class="text-[10px] text-gray-500 font-mono">\${d.address}</div>
+                        </div>
+                        <button onclick="selectOnvif('\${d.streamUri}', '\${d.name}')" class="bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-bold px-4 py-2 rounded-lg transition shrink-0">PILIH</button>
+                    `;
+                    list.appendChild(div);
+                });
+            }
+        } catch (e) { showModal('Gagal scan ONVIF', 'error'); }
+        finally {
+            btn.disabled = false;
+            text.innerText = 'Mulai Scan';
+            spin.classList.add('hidden');
+        }
+    };
+
+    function selectOnvif(uri, name) {
+        openCameraForm(false); // pastikan form terlihat
+        const sel = document.getElementById('edit_camera_type');
+        sel.value = 'rtsp';
+        sel.dispatchEvent(new Event('change'));
+        document.getElementById('edit_url_rtsp').value = uri;
+        if (!document.getElementById('edit_nama').value) document.getElementById('edit_nama').value = name;
+    }
+
+    // ===== Deteksi Stream (auto-probe path RTSP) =====
+    async function detectStreams() {
+        const text = document.getElementById('detectStreamText');
+        const spin = document.getElementById('detectStreamSpin');
+        const box = document.getElementById('detectResults');
+
+        const rawUrl = document.getElementById('edit_url_rtsp').value.trim();
+        if (!rawUrl) {
+            showModal('Isi field URL RTSP dulu (IP saja juga boleh, mis. 10.10.111.8).', 'error');
+            return;
+        }
+
+        text.innerText = 'Memindai path stream…';
+        spin.classList.remove('hidden');
+        box.classList.remove('hidden');
+        box.innerHTML = '<div class="text-center p-3 bg-gray-950 rounded-xl text-gray-500 text-xs italic">Memindai path stream…</div>';
+
+        try {
+            const res = await fetch('<%= base_path %>/api/rtsp/detect-streams', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    input: rawUrl,
+                    username: document.getElementById('detect_username').value,
+                    password: document.getElementById('detect_password').value
+                })
+            });
+            const data = await res.json();
+
+            if (!data.reachable) {
+                // Kamera cloud-only (host hidup tapi RTSP mati) → tampil sbg amber + ikon,
+                // bukan merah "error", karena ini butuh aksi user (aktifkan RTSP), bukan bug.
+                if (data.cloudOnly) {
+                    box.innerHTML = `<div class="p-3 bg-amber-900/30 border border-amber-500/30 rounded-xl text-amber-200 text-xs flex gap-2">
+                        <span class="shrink-0">☁️</span><span>${data.message}</span></div>`;
+                } else {
+                    box.innerHTML = `<div class="p-3 bg-rose-900/30 border border-rose-500/30 rounded-xl text-rose-300 text-xs">${data.message || 'Kamera tidak dapat dijangkau.'}</div>`;
+                }
+                return;
+            }
+            if (!data.results || data.results.length === 0) {
+                box.innerHTML = `<div class="p-3 bg-amber-900/30 border border-amber-500/30 rounded-xl text-amber-300 text-xs">${data.message || 'Tidak ada path stream terdeteksi.'}</div>`;
+                return;
+            }
+
+            box.innerHTML = '';
+            if (data.port) {
+                const head = document.createElement('div');
+                head.className = 'text-[10px] text-gray-500 uppercase tracking-widest font-black mb-1';
+                head.innerText = `Port terdeteksi: ${data.port} · ${data.results.length} stream ditemukan`;
+                box.appendChild(head);
+            }
+            data.results.forEach((r, idx) => {
+                const isRec = idx === 0; // sudah terurut resolusi tertinggi dulu
+                const notWidescreen = r.ratio !== '16:9';
+                const div = document.createElement('div');
+                div.className = 'p-3 bg-gray-950 rounded-xl border ' + (isRec ? 'border-emerald-500/50' : 'border-gray-700') + ' flex items-center justify-between gap-3';
+                div.innerHTML = `
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-white text-sm font-bold">${r.width}×${r.height}</span>
+                            <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">${r.codec}</span>
+                            <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-blue-900/40 text-blue-300 border border-blue-500/20">${r.ratio}</span>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-gray-500">${r.label}</span>
+                            ${isRec ? '<span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-900/40 text-emerald-300 border border-emerald-500/30">Rekomendasi</span>' : ''}
+                        </div>
+                        <div class="text-[10px] text-gray-500 font-mono truncate mt-1" title="${r.url}">${r.url}</div>
+                        ${notWidescreen ? '<div class="text-[10px] text-amber-400/80 mt-1">⚠ Rasio bukan 16:9 — kemungkinan sub-stream.</div>' : ''}
+                    </div>
+                    <button type="button" class="use-stream-btn bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-4 py-2 rounded-lg transition shrink-0" data-url="${r.url}">Pakai</button>
+                `;
+                box.appendChild(div);
+            });
+
+            box.querySelectorAll('.use-stream-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.getElementById('edit_url_rtsp').value = btn.dataset.url;
+                    box.classList.add('hidden');
+                    box.innerHTML = '';
+                    showModal('URL RTSP terisi dari hasil deteksi.');
+                };
+            });
+        } catch (e) {
+            box.innerHTML = '<div class="p-3 bg-rose-900/30 border border-rose-500/30 rounded-xl text-rose-300 text-xs">Gagal menghubungi server deteksi.</div>';
+        } finally {
+            text.innerText = '🔍 Deteksi Stream';
+            spin.classList.add('hidden');
+        }
+    }
+
+    // RTSP Generator
+    document.getElementById('rtspGeneratorForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const brand = document.getElementById('rtsp_brand').value;
+        const ip = document.getElementById('rtsp_ip').value;
+        const username = document.getElementById('rtsp_username').value;
+        const password = document.getElementById('rtsp_password').value;
+        
+        try {
+            const res = await fetch('<%= base_path %>/api/rtsp-generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ brand, ip, username, password })
+            });
+            const data = await res.json();
+            if (data.url) {
+                document.getElementById('rtspResult').classList.remove('hidden');
+                document.getElementById('rtspUrl').innerText = data.url;
+                document.getElementById('rtspBrandName').innerText = data.brand + ' URL';
+                document.getElementById('rtspDescription').innerText = data.description;
+                document.getElementById('rtspResult').scrollIntoView({ behavior: 'smooth' });
+            }
+        } catch (e) { showModal('Gagal generate URL', 'error'); }
+    };
+
+    function copyRtspUrl() {
+        const url = document.getElementById('rtspUrl').innerText;
+        navigator.clipboard.writeText(url).then(() => {
+            showModal('URL RTSP berhasil disalin!');
+        });
+    }
+
+    // Health Checks
+    function updateHealthChecks() {
+        const camerasData = JSON.parse('<%- JSON.stringify(cameras || []) %>');
+        const currentBasePath = '<%= base_path %>';
+        
+        camerasData.forEach(camera => {
+            fetch(`${currentBasePath}/api/health/${camera.id}`)
+                .then(r => r.json())
+                .then(d => {
+                    const el = document.getElementById(`admin-status-${camera.id}`);
+                    if (el) {
+                        if (d.ready) {
+                            el.className = 'n-pill n-pill-xs n-pill-solid cursor-pointer hover:opacity-70 transition';
+                            el.title = 'Online';
+                            el.innerHTML = '<span class="n-dot n-dot-pulse-on"></span>ONLINE';
+                        } else {
+                            el.className = 'n-pill n-pill-xs n-pill-accent cursor-pointer hover:opacity-70 transition';
+                            el.title = 'Offline — klik untuk coba preview';
+                            el.innerHTML = '<span class="n-dot n-dot-live"></span>OFFLINE';
+                        }
+                    }
+                }).catch(() => {});
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateHealthChecks();
+        setInterval(updateHealthChecks, 10000);
+
+        // Initial Sort A-Z
+        sortTable();
+    });
+
+    const cameraSearch = document.getElementById('cameraSearch');
+    const cameraTableBody = document.getElementById('cameraTableBody');
+
+    cameraSearch.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const rows = cameraTableBody.querySelectorAll('tr.camera-row');
+        rows.forEach(row => {
+            const name = row.querySelector('.font-bold').innerText.toLowerCase();
+            const location = row.querySelectorAll('td')[3].innerText.toLowerCase();
+            if (name.includes(term) || location.includes(term)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    function sortTable() {
+        const rows = Array.from(cameraTableBody.querySelectorAll('tr.camera-row'));
+        rows.sort((a, b) => {
+            const nameA = a.querySelector('.font-bold').innerText.toLowerCase();
+            const nameB = b.querySelector('.font-bold').innerText.toLowerCase();
+            return nameA.localeCompare(nameB);
+        });
+        rows.forEach(row => cameraTableBody.appendChild(row));
+    }
+
+    // Filter cameras by type
+    let currentFilter = 'all';
+    function filterCameras(type) {
+        currentFilter = type;
+        const rows = document.querySelectorAll('.camera-row');
+        
+        // Update button styles
+        document.querySelectorAll('[id^="filter-"]').forEach(btn => {
+            btn.classList.remove('bg-emerald-600', 'text-white');
+            btn.classList.add('bg-gray-700', 'text-gray-400');
+        });
+        document.getElementById('filter-' + type).classList.remove('bg-gray-700', 'text-gray-400');
+        document.getElementById('filter-' + type).classList.add('bg-emerald-600', 'text-white');
+        
+        // Filter rows
+        rows.forEach(row => {
+            const cameraType = row.getAttribute('data-camera-type');
+            if (type === 'all' || cameraType === type) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // ========== BULK ADD (1 DVR/NVR, banyak channel) ==========
+    // Dipindah dari halaman DVR/APK → di sini, sebagai modal, agar semua jalur
+    // "menambah kamera" (satuan & massal) berada di satu tempat.
+    let BULK_BRANDS = {};
+    let bulkBrandsLoaded = false;
+
+    function openBulkForm() {
+        const bd = document.getElementById('bulkModalBackdrop');
+        bd.classList.remove('hidden');
+        bd.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        // Muat daftar merek sekali saja (saat modal pertama dibuka).
+        if (!bulkBrandsLoaded) { bulkBrandsLoaded = true; loadBulkBrands(); }
+    }
+
+    function closeBulkForm() {
+        const bd = document.getElementById('bulkModalBackdrop');
+        bd.classList.add('hidden');
+        bd.classList.remove('flex');
+        document.body.style.overflow = '';
+    }
+
+    // Klik backdrop / tekan Esc untuk menutup (pola sama dgn modal kamera).
+    document.addEventListener('click', (e) => {
+        if (e.target.id === 'bulkModalBackdrop') closeBulkForm();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeBulkForm();
+    });
+
+    async function loadBulkBrands() {
+        try {
+            const res = await fetch('<%= base_path %>/api/dvr/brand-templates');
+            const data = await res.json();
+            BULK_BRANDS = data.brands || {};
+            const sel = document.getElementById('bulkBrand');
+            sel.innerHTML = '<option value="">Pilih merek…</option>';
+            // Hanya merek dengan token {channel} yang relevan untuk bulk.
+            Object.keys(BULK_BRANDS).forEach(key => {
+                const info = BULK_BRANDS[key];
+                if (!info.template.includes('{channel}')) return;
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = info.name;
+                sel.appendChild(opt);
+            });
+        } catch (e) {
+            bulkBrandsLoaded = false; // izinkan retry saat dibuka lagi
+            document.getElementById('bulkBrand').innerHTML = '<option value="">Gagal memuat merek</option>';
+        }
+    }
+
+    function bulkCollect() {
+        return {
+            brand: document.getElementById('bulkBrand').value,
+            ip: document.getElementById('bulkIp').value.trim(),
+            port: document.getElementById('bulkPort').value.trim(),
+            username: document.getElementById('bulkUsername').value,
+            password: document.getElementById('bulkPassword').value,
+            stream: document.getElementById('bulkStream').value,
+            channelStart: document.getElementById('bulkChannelStart').value,
+            channelEnd: document.getElementById('bulkChannelEnd').value,
+            level: document.getElementById('bulkLevel').value,
+            namePrefix: document.getElementById('bulkNamePrefix').value.trim(),
+            lokasi: document.getElementById('bulkLokasi').value.trim(),
+            enable_recording: document.getElementById('bulkEnableRecording').checked ? '1' : '0'
+        };
+    }
+
+    // Bangun URL preview di client (meniru template server, TANPA kredensial nyata di layar).
+    function bulkBuildPreviewUrl(brand, ch, data) {
+        const info = BULK_BRANDS[brand];
+        if (!info) return null;
+        const streamType = data.stream === 'sub' ? 'sub' : 'main';
+        const params = {
+            username: encodeURIComponent(data.username || 'user'),
+            password: '••••',
+            ip: data.ip || '192.168.1.100',
+            port: data.port || info.defaults.port,
+            channel: ch,
+            stream: streamType === 'main' ? 'main' : 'sub',
+            subtype: streamType === 'main' ? 0 : 1
+        };
+        Object.keys(info.defaults).forEach(k => {
+            if (params[k] === undefined || params[k] === null || params[k] === '') params[k] = info.defaults[k];
+        });
+        let url = info.template;
+        Object.keys(params).forEach(k => { url = url.replace(new RegExp(`\\{${k}\\}`, 'g'), params[k]); });
+        return url;
+    }
+
+    function bulkValidate(data) {
+        if (!data.brand) return 'Pilih merek dulu.';
+        if (!data.ip) return 'IP address wajib diisi.';
+        if (!data.username || !data.password) return 'Username & password wajib diisi.';
+        const s = parseInt(data.channelStart, 10), e = parseInt(data.channelEnd, 10);
+        if (!Number.isInteger(s) || !Number.isInteger(e) || s < 1 || e < s) return 'Rentang channel tidak valid.';
+        if (e - s + 1 > 64) return 'Maksimal 64 channel.';
+        return null;
+    }
+
+    function bulkSetSubmitEnabled(on) {
+        const btn = document.getElementById('bulkSubmitBtn');
+        btn.disabled = !on;
+        btn.style.opacity = on ? '1' : '.5';
+        btn.style.cursor = on ? 'pointer' : 'not-allowed';
+    }
+
+    document.getElementById('bulkPreviewBtn').onclick = () => {
+        const data = bulkCollect();
+        const err = bulkValidate(data);
+        const box = document.getElementById('bulkPreview');
+        box.classList.remove('hidden');
+        if (err) {
+            box.innerHTML = `<div class="p-3 rounded-xl text-xs" style="color:var(--n-accent);border:1px solid var(--n-accent);">${err}</div>`;
+            bulkSetSubmitEnabled(false);
+            return;
+        }
+        const prefix = data.namePrefix || (BULK_BRANDS[data.brand] ? BULK_BRANDS[data.brand].name : 'CAM');
+        const s = parseInt(data.channelStart, 10), e = parseInt(data.channelEnd, 10);
+        let html = `<div class="n-label mb-1">${e - s + 1} kamera akan dibuat</div>`;
+        for (let ch = s; ch <= e; ch++) {
+            const url = bulkBuildPreviewUrl(data.brand, ch, data);
+            html += `<div class="p-2 rounded-lg flex items-center gap-3" style="background:var(--n-bg);border:1px solid var(--n-line);">
+                <span class="text-xs font-bold shrink-0" style="color:var(--n-ink);">${prefix} CH${ch}</span>
+                <code class="text-[10px] font-mono truncate" style="color:var(--n-ink-soft);">${url}</code>
+            </div>`;
+        }
+        box.innerHTML = html;
+        bulkSetSubmitEnabled(true);
+    };
+
+    document.getElementById('bulkSubmitBtn').onclick = async () => {
+        const data = bulkCollect();
+        const err = bulkValidate(data);
+        if (err) { showModal(err, 'error'); return; }
+        const btn = document.getElementById('bulkSubmitBtn');
+        const resultBox = document.getElementById('bulkResult');
+        bulkSetSubmitEnabled(false);
+        btn.textContent = 'Menambahkan…';
+        resultBox.classList.add('hidden');
+        try {
+            const res = await fetch('<%= base_path %>/api/dvr/bulk-add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const out = await res.json();
+            resultBox.classList.remove('hidden');
+            if (!out.success) {
+                resultBox.innerHTML = `<div class="p-3 rounded-xl text-xs" style="color:var(--n-accent);border:1px solid var(--n-accent);">${out.message || 'Gagal.'}</div>`;
+            } else {
+                let html = `<div class="p-3 rounded-xl text-sm font-bold" style="color:var(--n-ink);border:1px solid var(--n-line);">${out.addedCount} kamera ditambahkan${out.failedCount ? `, ${out.failedCount} gagal` : ''}.</div>`;
+                if (out.failedCount) {
+                    html += '<div class="mt-2 space-y-1">' + out.failed.map(f =>
+                        `<div class="text-[10px]" style="color:var(--n-accent);">CH${f.channel}: ${f.reason}</div>`).join('') + '</div>';
+                }
+                resultBox.innerHTML = html;
+                showModal(`${out.addedCount} kamera berhasil ditambahkan`);
+                // Muat ulang agar kamera baru langsung tampil di tabel.
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        } catch (e) {
+            resultBox.classList.remove('hidden');
+            resultBox.innerHTML = `<div class="p-3 rounded-xl text-xs" style="color:var(--n-accent);border:1px solid var(--n-accent);">Kesalahan koneksi.</div>`;
+        } finally {
+            btn.textContent = 'Tambah Semua';
+            bulkSetSubmitEnabled(true);
+        }
+    };
+
+    /* ================= PREVIEW LIVE (klik badge status) ================= */
+    const previewHlsBase = '<%= typeof hlsBaseUrl !== "undefined" ? hlsBaseUrl : "" %>';
+    let previewHls = null;
+
+    // Ubah URL YouTube/embed jadi bentuk yang bisa dipasang di iframe.
+    function toEmbedSrc(url) {
+        if (!url) return '';
+        const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|live\/))([\w-]{11})/);
+        if (yt) return 'https://www.youtube.com/embed/' + yt[1] + '?autoplay=1&mute=1';
+        return url;
+    }
+
+    function openPreview(id) {
+        const pill = document.getElementById('admin-status-' + id);
+        const nama = pill ? pill.dataset.nama : ('Kamera ' + id);
+        const type = pill ? pill.dataset.camera_type : 'rtsp';
+        const embedUrl = pill ? pill.dataset.embed_url : '';
+
+        const backdrop = document.getElementById('previewBackdrop');
+        const video = document.getElementById('previewVideo');
+        const frame = document.getElementById('previewFrame');
+        const loading = document.getElementById('previewLoading');
+        const errBox = document.getElementById('previewError');
+
+        document.getElementById('previewTitle').textContent = nama;
+        document.getElementById('previewSub').textContent = 'ID ' + id + ' • ' + (type === 'embed' ? 'Embed' : 'RTSP / HLS');
+        errBox.classList.add('hidden'); errBox.classList.remove('flex');
+        backdrop.classList.remove('hidden'); backdrop.classList.add('flex');
+
+        if (type === 'embed') {
+            // Embed (YouTube dll) tidak lewat MediaMTX — pakai iframe.
+            video.classList.add('hidden');
+            frame.classList.remove('hidden');
+            loading.classList.add('hidden');
+            frame.src = toEmbedSrc(embedUrl);
+            return;
+        }
+
+        frame.classList.add('hidden'); frame.src = '';
+        video.classList.remove('hidden');
+        loading.classList.remove('hidden');
+
+        const primaryUrl = previewHlsBase + '/cam_' + id + '/index.m3u8';
+        const fallbackUrl = previewHlsBase + '/cam_' + id + '_input/index.m3u8';
+        const done = () => loading.classList.add('hidden');
+        const fail = () => {
+            loading.classList.add('hidden');
+            errBox.classList.remove('hidden'); errBox.classList.add('flex');
+        };
+
+        video.addEventListener('playing', done, { once: true });
+        video.addEventListener('canplay', done, { once: true });
+
+        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+            const hls = new Hls({ manifestLoadingMaxRetry: 2, manifestLoadingRetryDelay: 1000 });
+            hls.loadSource(primaryUrl);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+            hls.on(Hls.Events.ERROR, (ev, data) => {
+                if (!data.fatal) return;
+                hls.destroy();
+                // Fallback ke path _input (stream mentah dari kamera).
+                const fb = new Hls({ manifestLoadingMaxRetry: 3, manifestLoadingRetryDelay: 1000 });
+                fb.loadSource(fallbackUrl);
+                fb.attachMedia(video);
+                fb.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+                fb.on(Hls.Events.ERROR, (e2, d2) => { if (d2.fatal) { fb.destroy(); previewHls = null; fail(); } });
+                previewHls = fb;
+            });
+            previewHls = hls;
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = primaryUrl;
+            video.addEventListener('error', fail, { once: true });
+            video.play().catch(() => {});
+        } else {
+            fail();
+        }
+    }
+
+    function closePreview() {
+        const backdrop = document.getElementById('previewBackdrop');
+        const video = document.getElementById('previewVideo');
+        const frame = document.getElementById('previewFrame');
+        if (previewHls) { previewHls.destroy(); previewHls = null; }
+        video.pause(); video.removeAttribute('src'); video.load();
+        frame.src = '';
+        backdrop.classList.add('hidden'); backdrop.classList.remove('flex');
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !document.getElementById('previewBackdrop').classList.contains('hidden')) closePreview();
+    });
+
+</script>
+
+<%- include('partials/admin_footer') %>
+

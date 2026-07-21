@@ -1,0 +1,56 @@
+# ============================================================
+#  RAHASIA / DATA RUNTIME — JANGAN PERNAH DI-COMMIT
+# ============================================================
+# data/ berisi state persist: config asli (password admin,
+# session_secret), database pelanggan, private key push notif,
+# sesi WhatsApp, bukti transfer, dan rekaman video.
+data/
+
+# Jaga-jaga bila file sensitif muncul di lokasi lain
+config.json
+*.db
+*.db-shm
+*.db-wal
+vapid-keys.json
+baileys_auth_info/
+subscriptions.json
+.env
+.env.*
+*.pem
+*.key
+
+# Backup .git repo clone upstream (lokal saja)
+.backup/
+
+# ============================================================
+#  BUILD / DEPENDENCY
+# ============================================================
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Rekaman & upload (besar, bukan kode)
+recordings/
+app/recordings/
+app/uploads/
+app/bukti_tf/
+app/data/
+
+# Log runtime ffmpeg/transcode (~17 MB, regenerate sendiri)
+*.log
+app/stream_logs/
+app/smart_transcode.log
+
+# ============================================================
+#  OS / EDITOR
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+
+# Sesi lokal Claude Code (bukan bagian proyek)
+.claude/

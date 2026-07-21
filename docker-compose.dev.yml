@@ -1,0 +1,38 @@
+# ==========================================================================
+# DEV override — live source + nodemon, NO rebuild on code change.
+#
+# Use together with the all-in-one compose:
+#   docker compose -f docker-compose.allinone.yml -f docker-compose.dev.yml up -d
+#
+# What it does vs the base compose:
+#   - Bind-mounts ./app -> /app so edits on the host are seen instantly.
+#   - Keeps the image's node_modules (anonymous volume shadows the host's absence).
+#   - Sets DEV_MODE=1 so the entrypoint runs Node via nodemon (auto-restart on
+#     .js/.ejs/.json changes). MediaMTX keeps running across reloads.
+#
+# NOTE: editing app/index.js etc. now reloads in ~1s. Rebuild is only needed
+# when you change package.json (new npm deps) or the Dockerfile itself.
+# ==========================================================================
+
+services:
+  app:
+    environment:
+      - DEV_MODE=1
+    volumes:
+      # Live application source (overrides the copy baked into the image)
+      - ./app:/app
+      # Preserve image-provided node_modules (host has none -> don't shadow it)
+      - /app/node_modules
+      # Single-container MediaMTX config
+      - ./mediamtx.single.yml:/app/mediamtx.yml
+      # Persisted state (same as base)
+      - ./data/config.json:/app/config.json
+      - ./data/cameras.db:/app/cameras.db
+      - ./data/cameras.db-wal:/app/cameras.db-wal
+      - ./data/cameras.db-shm:/app/cameras.db-shm
+      - ./data/recordings:/app/recordings
+      - ./data/uploads:/app/uploads
+      - ./data/bukti_tf:/app/bukti_tf
+      - ./data/baileys_auth_info:/app/baileys_auth_info
+      - ./data/subscriptions.json:/app/subscriptions.json
+      - ./data/vapid-keys.json:/app/vapid-keys.json

@@ -1,0 +1,59 @@
+{
+    "_comment": "Template config for Docker. Copy to data/config.json and edit. Key diff vs bare-metal: mediamtx.host points to the 'mediamtx' service name, and behind_https_proxy is false for plain local access.",
+    "server": {
+        "port": 3003,
+        "session_secret": "CHANGE-ME-run: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+        "behind_https_proxy": false,
+        "public_base_url": "",
+        "base_path": "",
+        "repository_url": "alijayanet/cctv-monitoring"
+    },
+    "authentication": {
+        "username": "admin",
+        "password": "CHANGE-ME-min-16-chars"
+    },
+    "mediamtx": {
+        "host": "mediamtx",
+        "api_port": 9123,
+        "rtsp_port": 8555,
+        "hls_port": 8856,
+        "public_hls_url": ""
+    },
+    "onvif": {
+        "discovery_timeout": 8000
+    },
+    "map": {
+        "default_lat": -6.252412341147035,
+        "default_lng": 107.92064112262626,
+        "default_zoom": 13
+    },
+    "site": {
+        "title": "CCTV ONLINE",
+        "footer": "CCTV",
+        "running_text": "========== Layanan live stream CCTV =========="
+    },
+    "recording": {
+        "enabled": true,
+        "start_time": "00:00",
+        "end_time": "23:59",
+        "segment_duration": "60m",
+        "delete_after": "30d",
+        "video_codec": "h264",
+        "resolution": "720p",
+        "frame_rate": 10,
+        "bitrate": "400k",
+        "max_bitrate": "1500k",
+        "audio_enabled": "true",
+        "audio_bitrate": "64k",
+        "max_storage_percent": 95,
+        "storage_path": "./recordings"
+    },
+    "telegram": {
+        "enabled": false,
+        "bot_token": "",
+        "chat_id": ""
+    },
+    "whatsapp": {
+        "admin_numbers": ""
+    }
+}
